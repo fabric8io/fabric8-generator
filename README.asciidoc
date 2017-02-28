@@ -1,0 +1,24 @@
+== fabric8-generator-addon
+:idprefix: id_ 
+This addon provides the addons for the fabric8 forge generator wizards
+        
+=== Depends on
+[options="header"]
+|===
+|Addon |Exported |Optional
+|ui
+|yes
+|no
+|projects
+|yes
+|no
+|===
+
+== Setup
+
+This Addon needs to be installed in the local maven repository before used in the backend.
+
+[source,bash]
+----
+    mvn clean install 
+----

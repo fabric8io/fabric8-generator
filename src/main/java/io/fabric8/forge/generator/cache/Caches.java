@@ -16,8 +16,6 @@
  */
 package io.fabric8.forge.generator.cache;
 
-import org.infinispan.Cache;
-import org.infinispan.manager.EmbeddedCacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,15 +24,4 @@ import org.slf4j.LoggerFactory;
 public class Caches {
     private static final transient Logger LOG = LoggerFactory.getLogger(Caches.class);
 
-    /**
-     * Returns the cache for the given name, lazily creating it with a warning if its not been explicitly configured
-     */
-    public static <K,V> Cache<K, V> getCache(EmbeddedCacheManager cacheManager, String name) {
-        Cache<K,V> cache = cacheManager.getCache(name, false);
-        if (cache == null) {
-            LOG.warn("Cache is not configured for name: " + name + " so lazily creating it!");
-            cache = cacheManager.getCache(name, true);
-        }
-        return cache;
-    }
 }

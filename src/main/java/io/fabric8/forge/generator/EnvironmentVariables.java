@@ -20,4 +20,6 @@ package io.fabric8.forge.generator;
  */
 public class EnvironmentVariables {
     public static final String ON_PREMISE = "FORGE_ON_PREMISE";
+    public static final String GOGS_URL = "GOGS_URL";
+    public static final String NAMESPACE = "KUBERNETES_NAMESPACE";
 }

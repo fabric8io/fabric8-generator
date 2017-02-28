@@ -16,6 +16,7 @@
  */
 package io.fabric8.forge.generator.kubernetes;
 
+import io.fabric8.forge.generator.EnvironmentVariables;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.extensions.Configs;
@@ -83,5 +84,20 @@ public class KubernetesClientHelper {
     public static String getUserCacheKey() {
         // TODO
         return "TODO";
+    }
+
+    /**
+     * Returns the namespace used to discover services like gogs and gitlab when on premise
+     */
+    public static String getDiscoveryNamespace(KubernetesClient kubernetesClient) {
+        String namespace = System.getenv(EnvironmentVariables.NAMESPACE);
+        if (Strings.isNotBlank(namespace)) {
+            return namespace;
+        }
+        namespace = kubernetesClient.getNamespace();
+        if (Strings.isNotBlank(namespace)) {
+            return namespace;
+        }
+        return KubernetesHelper.defaultNamespace();
     }
 }

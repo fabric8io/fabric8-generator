@@ -5,7 +5,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package io.fabric8.forge.generator.github;
+package io.fabric8.forge.generator.gogs;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.git.AbstractGitSetupCredentialsStep;
@@ -29,25 +29,25 @@ import javax.inject.Inject;
 import java.util.Map;
 
 /**
- * When running on premise lets let the user setup their github credentials and store them in a Secret
+ * When running on premise lets let the user setup their gogs credentials and store them in a Secret
  */
-public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep implements UIWizardStep {
+public class GogsSetupCredentialsStep extends AbstractGitSetupCredentialsStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @Inject
-    @WithAttributes(label = "github user name", required = true, description = "Your github user name")
+    @WithAttributes(label = "gogs user name", required = true, description = "Your gogs user name")
     private UIInput<String> gitUserName;
 
     @Inject
-    @WithAttributes(label = "github password", required = true, description = "Your github passcode or password", type = InputType.SECRET)
+    @WithAttributes(label = "gogs password", required = true, description = "Your gogs passcode or password", type = InputType.SECRET)
     private UIInput<String> gitPassword;
 
     @Inject
-    @WithAttributes(label = "email for github", required = true, description = "Your github email address")
+    @WithAttributes(label = "email for gogs", required = true, description = "Your gogs email address")
     private UIInput<String> gitEmail;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
-        GitAccount details = loadGitAccountFromSecret(GitSecretNames.GITHUB_SECRET_NAME);
+        GitAccount details = loadGitAccountFromSecret(GitSecretNames.GOGS_SECRET_NAME);
         if (details != null) {
             setIfNotBlank(gitUserName, details.getUsername());
             setIfNotBlank(gitPassword, details.getPassword());
@@ -73,7 +73,7 @@ public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep 
 /*
       if (details.hasValidData()) {
          NavigationResultBuilder builder = NavigationResultBuilder.create();
-         builder.add(GithubSetupCredentialsStep.class);
+         builder.add(GogsSetupCredentialsStep.class);
          return builder.build();
       }
 */
@@ -88,16 +88,16 @@ public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep 
         String token = null;
 
         if (Strings.isNullOrBlank(username)) {
-            return Results.fail("Missing github username");
+            return Results.fail("Missing gogs username");
         }
         if (Strings.isNullOrBlank(password)) {
-            return Results.fail("Missing github password");
+            return Results.fail("Missing gogs password");
         }
         if (Strings.isNullOrBlank(email)) {
-            return Results.fail("Missing github email");
+            return Results.fail("Missing gogs email");
         }
         GitAccount details = new GitAccount(username, token, password, email);
-        Result result = storeGitAccountInSecret(details, GitSecretNames.GITHUB_SECRET_NAME);
+        Result result = storeGitAccountInSecret(details, GitSecretNames.GOGS_SECRET_NAME);
         if (result != null) {
             return result;
         }

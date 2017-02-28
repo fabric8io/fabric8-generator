@@ -18,6 +18,7 @@ package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.git.EnvironmentVariablePrefixes;
 import io.fabric8.forge.generator.git.GitAccount;
+import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -83,21 +84,22 @@ public class GitHubFacade {
     }
 
 
-    public Iterable<GitHubOrganisationDTO> loadGithubOrganisations(UIBuilder builder) {
-        SortedSet<GitHubOrganisationDTO> organisations = new TreeSet();
+    public Iterable<GitOrganisationDTO> loadGithubOrganisations(UIBuilder builder) {
+        SortedSet<GitOrganisationDTO> organisations = new TreeSet();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {
-            organisations.add(new GitHubOrganisationDTO(username));
+            organisations.add(new GitOrganisationDTO(username));
         }
         GitHub github = this.github;
         if (github != null) {
             try {
+                LOG.info("Loading github organisations for " + username);
                 Map<String, GHOrganization> map = github.getMyOrganizations();
                 if (map != null) {
                     Collection<GHOrganization> organizations = map.values();
                     for (GHOrganization organization : organizations) {
 
-                        GitHubOrganisationDTO dto = new GitHubOrganisationDTO(organization);
+                        GitOrganisationDTO dto = new GitOrganisationDTO(organization);
                         if (dto.getName() != null) {
                             organisations.add(dto);
                         }

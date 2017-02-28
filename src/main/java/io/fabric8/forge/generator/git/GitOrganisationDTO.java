@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator.github;
+package io.fabric8.forge.generator.git;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.kohsuke.github.GHOrganization;
@@ -26,22 +26,22 @@ import java.net.URL;
  * Represents a github organisation you can pick
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class GitHubOrganisationDTO implements Comparable<GitHubOrganisationDTO> {
+public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
     private String name;
     private String avatarUrl;
     private String htmlUrl;
 
-    public GitHubOrganisationDTO() {
+    public GitOrganisationDTO() {
     }
 
-    public GitHubOrganisationDTO(String name) {
+    public GitOrganisationDTO(String name) {
         this.name = name;
         this.htmlUrl = "https://github.com/" + name;
 
         // TODO should we add an avatar for the current user?
     }
 
-    public GitHubOrganisationDTO(GHOrganization organization) throws IOException {
+    public GitOrganisationDTO(GHOrganization organization) throws IOException {
         this.name = organization.getName();
         this.avatarUrl = organization.getAvatarUrl();
         URL htmlUrl = organization.getHtmlUrl();
@@ -64,7 +64,7 @@ public class GitHubOrganisationDTO implements Comparable<GitHubOrganisationDTO> 
         if (o == null || getClass() != o.getClass())
             return false;
 
-        GitHubOrganisationDTO that = (GitHubOrganisationDTO) o;
+        GitOrganisationDTO that = (GitOrganisationDTO) o;
 
         return name != null ? name.equals(that.name) : that.name == null;
     }
@@ -75,7 +75,7 @@ public class GitHubOrganisationDTO implements Comparable<GitHubOrganisationDTO> 
     }
 
     @Override
-    public int compareTo(GitHubOrganisationDTO that) {
+    public int compareTo(GitOrganisationDTO that) {
         return this.name.compareTo(that.name);
     }
 

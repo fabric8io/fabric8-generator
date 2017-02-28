@@ -25,5 +25,5 @@ public class AttributeMapKeys {
     public static final String TYPE = "type";
     public static final String PROJECT_DIRECTORY_FILE = "projectDirectoryFile";
     public static final String GIT_URL = "gitUrl";
-    public static final Class<GitAccount> GITHUB_DETAILS = GitAccount.class;
+    public static final Class<GitAccount> GIT_ACCOUNT = GitAccount.class;
 }

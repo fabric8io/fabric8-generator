@@ -22,7 +22,6 @@ import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultTransformer;
-import org.obsidiantoaster.generator.ui.quickstart.NewProjectFromQuickstartWizard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,36 +30,18 @@ import org.slf4j.LoggerFactory;
 public class NewProjectFromQuickstartWizardTransformer implements NavigationResultTransformer {
     private static final transient Logger LOG = LoggerFactory.getLogger(NewProjectFromQuickstartWizardTransformer.class);
 
-    public NewProjectFromQuickstartWizardTransformer() {
-         System.out.println("========== created " + this);
-        LOG.info("========== created " + this);
-    }
-
     @Override
     public boolean handles(UINavigationContext context) {
-        System.out.println("============================ handles() " + this);
-        LOG.info("============================ handles() " + this);
-
-        try {
-            UICommand currentCommand = context.getCurrentCommand();
-            String name = currentCommand.getMetadata(context.getUIContext()).getName();
-            String className = currentCommand.getClass().getName();
-            LOG.info("========== testing for NewProjectGeneratorWizard on name: " + name + " class: " + className);
-
-            if ("obsidian-new-quickstart".equals(name) || className.equals(NewProjectFromQuickstartWizard.class.getName())) {
-                return true;
-            }
-
-            return context.getCurrentCommand() instanceof NewProjectFromQuickstartWizard;
-        } catch (Exception e) {
-            LOG.error("========= Caught: " + e, e);
-            return false;
+        UICommand currentCommand = context.getCurrentCommand();
+        String name = currentCommand.getMetadata(context.getUIContext()).getName();
+        if ("Obsidian: New Quickstart".equals(name)) {
+            return true;
         }
+        return false;
     }
 
     @Override
     public NavigationResult transform(UINavigationContext context, NavigationResult currentFlow) {
-        System.out.println("============= adding transformer " + this);
         NavigationResultBuilder builder = NavigationResultBuilder.create(currentFlow);
         CommonSteps.addPipelineGitHubAndOpenShiftSteps(builder);
         return builder.build();

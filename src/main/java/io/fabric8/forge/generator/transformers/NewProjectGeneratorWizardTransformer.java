@@ -22,7 +22,6 @@ import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultTransformer;
-import org.obsidiantoaster.generator.ui.starter.NewProjectGeneratorWizard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,23 +32,16 @@ public class NewProjectGeneratorWizardTransformer implements NavigationResultTra
 
     @Override
     public boolean handles(UINavigationContext context) {
-        System.out.println("============================ handles() " + this);
-        LOG.info("============================ handles() " + this);
-
         UICommand currentCommand = context.getCurrentCommand();
         String name = currentCommand.getMetadata(context.getUIContext()).getName();
-        String className = currentCommand.getClass().getName();
-        LOG.info("========== testing for NewProjectGeneratorWizard on name: " + name + " class: " + className);
-
-        if ("obsidian-new-project".equals(name) || className.equals(NewProjectGeneratorWizard.class.getName())) {
+        if ("Obsidian: New Project".equals(name)) {
             return true;
         }
-        return currentCommand instanceof NewProjectGeneratorWizard;
+        return false;
     }
 
     @Override
     public NavigationResult transform(UINavigationContext context, NavigationResult currentFlow) {
-        System.out.println("============= adding transformer " + this);
         NavigationResultBuilder builder = NavigationResultBuilder.create(currentFlow);
         CommonSteps.addPipelineGitHubAndOpenShiftSteps(builder);
         return builder.build();

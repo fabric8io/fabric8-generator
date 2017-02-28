@@ -112,6 +112,7 @@
       <dependency>
           <groupId>org.obsidiantoaster.forge</groupId>
           <artifactId>obsidian-generator</artifactId>
+          <classifier>forge-addon</classifier>
           <version>1.0.0-SNAPSHOT</version>
       </dependency>
 

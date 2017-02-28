@@ -65,17 +65,25 @@ public class GitAccount {
     }
 
     public static GitAccount loadGitDetailsFromSecret(Cache<String, GitAccount> cache, String secretName) {
-        String key = KubernetesClientHelper.getUserCacheKey();
+        final String key = KubernetesClientHelper.getUserCacheKey();
+        GitAccount answer = cache.get(key);
+/*
+        if (answer != null) {
+            LOG.info("============== CACHED data for key " + key + " = " + answer);
+            return answer;
+        }
+*/
         return cache.computeIfAbsent(key, k -> {
             KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForUser();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
             GitAccount details = loadFromSecret(kubernetesClient, namespace, secretName);
+            LOG.info("Loaded details: " + details + " for cache key: " +key);
             return details;
         });
     }
 
     public static GitAccount loadFromSecret(KubernetesClient kubernetesClient, String namespace, String secretName) {
-        LOG.info("Loading got secret from namespace " + namespace + " with name: " + secretName);
+        LOG.info("Loading git secret from namespace " + namespace + " with name: " + secretName);
         Secret secret = kubernetesClient.secrets().inNamespace(namespace).withName(secretName).get();
         if (secret != null) {
             Map<String, String> data = secret.getData();

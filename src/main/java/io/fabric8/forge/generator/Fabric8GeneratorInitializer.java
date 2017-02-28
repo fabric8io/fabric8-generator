@@ -15,22 +15,14 @@
  */
 package io.fabric8.forge.generator;
 
-import io.fabric8.forge.devops.springboot.SpringBootProjectType;
 import io.fabric8.forge.generator.pipeline.JenkinsPipelineLibrary;
-import io.vertx.forge.project.VertxProjectType;
 import org.jboss.forge.addon.maven.archetype.ArchetypeCatalogFactoryRegistry;
-import org.jboss.forge.addon.projects.ProjectType;
-import org.jboss.forge.addon.swarm.project.WildFlySwarmProjectType;
 import org.jboss.forge.furnace.container.cdi.events.Local;
 import org.jboss.forge.furnace.event.PostStartup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Produces;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  */

@@ -42,6 +42,10 @@ public abstract class AbstractProjectOverviewCommand extends AbstractDevToolsCom
             scanProject(rootFolder, processors, projectOverview, 0, 3);
         }
         log.info("getProjectOverview took " + watch.taken());
+        if (projectOverview.getBuilders().isEmpty()) {
+            // lets assume maven for now!
+            projectOverview.addBuilder("maven");
+        }
         return projectOverview;
     }
 

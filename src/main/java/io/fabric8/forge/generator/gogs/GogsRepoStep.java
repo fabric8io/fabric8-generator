@@ -59,7 +59,7 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
 
-        this.gogs = createGithubFacade(builder.getUIContext());
+        this.gogs = createGitFacade(builder.getUIContext());
 
         // TODO cache this per user every say 30 seconds!
         Iterable<GitOrganisationDTO> organisations = new ArrayList<>();
@@ -90,12 +90,12 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
         builder.add(gitRepoDescription);
     }
 
-    private GogsFacade createGithubFacade(UIContext context) {
+    private GogsFacade createGitFacade(UIContext context) {
         GitAccount details = (GitAccount) context.getAttributeMap().get(AttributeMapKeys.GIT_ACCOUNT);
         if (details != null) {
             return new GogsFacade(details);
         } else if (Configuration.isOnPremise()) {
-            details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GITHUB_SECRET_NAME);
+            details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GOGS_SECRET_NAME);
             return new GogsFacade(details);
         }
 
@@ -106,7 +106,7 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
     @Override
     public void validate(UIValidationContext context) {
         if (gogs == null || !gogs.isDetailsValid()) {
-            // invoked too early before the github account is setup - lets return silently
+            // invoked too early before the git account is setup - lets return silently
             return;
         }
         String orgName = getOrganisationName(gitOrganisation.getValue());
@@ -120,12 +120,12 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
         if (gogs == null) {
-            return Results.fail("No github account setup");
+            return Results.fail("No gogs account setup");
         }
         String org = getOrganisationName(gitOrganisation.getValue());
         String repo = gitRepository.getValue();
 
-        LOG.info("Creating github repository " + org + "/" + repo);
+        LOG.info("Creating gogs repository " + org + "/" + repo);
 
         UIContext uiContext = context.getUIContext();
         File basedir = getSelectionFolder(uiContext);
@@ -133,7 +133,7 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
             return Results.fail("No project directory exists! " + basedir);
         }
 
-        String gitUrl = "https://github.com/" + org + "/" + repo + ".git";
+        String gitUrl = "https://gogs/" + org + "/" + repo + ".git";
         try {
             RepositoryDTO repository = gogs.createRepository(org, repo, gitRepoDescription.getValue());
             String cloneUrl = repository.getCloneUrl();
@@ -150,7 +150,7 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
             return Results.fail("Failed to create repository  " + org + "/" + repo + " " + e, e);
         }
 
-        LOG.info("Created githubrepository: " + gitUrl);
+        LOG.info("Created gogs repository: " + gitUrl);
         uiContext.getAttributeMap().put(GIT_URL, gitUrl);
 
         Result result = updateGitURLInJenkinsfile(basedir, gitUrl);

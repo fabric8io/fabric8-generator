@@ -81,7 +81,7 @@ public class GogsFacade {
                     Collection<GHOrganization> organizations = map.values();
                     for (GHOrganization organization : organizations) {
 
-                        GitHubOrganisationDTO dto = new GitHubOrganisationDTO(organization);
+                        GitOrganisationDTO dto = new GitOrganisationDTO(organization);
                         if (dto.getName() != null) {
                             organisations.add(dto);
                         }

@@ -7,8 +7,12 @@
 
 package io.fabric8.forge.generator.git;
 
+import io.fabric8.forge.generator.cache.CacheFacade;
+import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.github.GithubRepoStep;
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
+import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
+import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -36,10 +40,22 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
     @WithAttributes(label = "git service user name", required = true, description = "Select which git provider you wish to use")
     private UISelectOne<GitProvider> gitService;
 
+    @Inject
+    private CacheFacade cacheManager;
+
+    protected Cache<String, List<GitProvider>> gitProviderCache;
+
     public void initializeUI(final UIBuilder builder) throws Exception {
-        List<GitProvider> gitServices = GitProvider.loadGitProviders();
-        if (gitServices.size() > 1) {
+        super.initializeUI(builder);
+
+        this.gitProviderCache = cacheManager.getCache(CacheNames.GIT_PROVIDERS);
+
+        String key = KubernetesClientHelper.getUserCacheKey();
+        List<GitProvider> gitServices = gitProviderCache.computeIfAbsent(key, k -> GitProvider.loadGitProviders());
+        int size = gitServices.size();
+        if (size > 1) {
             gitService.setValueChoices(gitServices);
+            gitService.setDefaultValue(gitServices.get(0));
             gitService.setItemLabelConverter(new Converter<GitProvider, String>() {
                 @Override
                 public String convert(GitProvider gitProvider) {
@@ -60,7 +76,8 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
     }
 
     protected void addRepoStep(NavigationResultBuilder builder) {
-        builder.add(GithubRepoStep.class);
+        GitProvider value = gitService.getValue();
+        value.addRepoStep(builder);
     }
 
     @Override

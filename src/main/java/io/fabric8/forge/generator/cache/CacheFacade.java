@@ -43,6 +43,8 @@ public class CacheFacade {
     public CacheFacade() {
         manager.defineConfiguration(CacheNames.USER_NAMESPACES, createCacheConfiguration(1000, 2 * 60));
         
+        manager.defineConfiguration(CacheNames.GIT_PROVIDERS, createCacheConfiguration(1000, 2 * 60));
+
         manager.defineConfiguration(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, createCacheConfiguration(1000, 2 * 60));
         manager.defineConfiguration(CacheNames.GITHUB_ORGANISATIONS, createCacheConfiguration(1000, 60 * 5));
 

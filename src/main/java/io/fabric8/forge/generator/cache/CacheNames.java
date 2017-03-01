@@ -26,4 +26,5 @@ public class CacheNames {
 
     public static final String GOGS_ACCOUNT_FROM_SECRET = "gogs-account-from-secret";
     public static final String GOGS_ORGANISATIONS = "gogs-organisations";
+    public static final String GIT_PROVIDERS = "git-providers";
 }

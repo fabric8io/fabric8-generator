@@ -60,6 +60,7 @@ public abstract class GitProvider {
             }
 */
         }
+        LOG.info("Loaded git providers: " + answer);
         return answer;
     }
 

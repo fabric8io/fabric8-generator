@@ -19,8 +19,6 @@ package io.fabric8.forge.generator.gogs;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.GitSecretNames;
-import io.fabric8.forge.generator.github.GithubRepoStep;
-import io.fabric8.forge.generator.github.GithubSetupCredentialsStep;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
@@ -37,12 +35,12 @@ public class GogsProvider extends GitProvider {
 
     @Override
     public void addRepoStep(NavigationResultBuilder builder) {
-        builder.add(GithubRepoStep.class);
+        builder.add(GogsRepoStep.class);
     }
 
     @Override
     public void addConfigureStep(NavigationResultBuilder builder) {
-        builder.add(GithubSetupCredentialsStep.class);
+        builder.add(GogsSetupCredentialsStep.class);
     }
 
     @Override
@@ -51,8 +49,8 @@ public class GogsProvider extends GitProvider {
             KubernetesClient kubernetesClient = KubernetesClientHelper
                     .createKubernetesClientForUser();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
-            String githubSecretName = GitSecretNames.GITHUB_SECRET_NAME;
-            details = GitAccount.loadFromSecret(kubernetesClient, namespace, githubSecretName);
+            String secretName = GitSecretNames.GOGS_SECRET_NAME;
+            details = GitAccount.loadFromSecret(kubernetesClient, namespace, secretName);
 
             configuredCorrectly = details != null && details.hasValidData();
         }

@@ -25,16 +25,25 @@ import org.jboss.forge.addon.ui.result.navigation.NavigationResultTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  */
-public class NewProjectGeneratorWizardTransformer implements NavigationResultTransformer {
-    private static final transient Logger LOG = LoggerFactory.getLogger(NewProjectGeneratorWizardTransformer.class);
+public class ObsidianWizardTransformer implements NavigationResultTransformer {
+    private static final transient Logger LOG = LoggerFactory.getLogger(ObsidianWizardTransformer.class);
+
+    private Set<String> commandNames = new HashSet<>(Arrays.asList(
+            "Obsidian: New Quickstart",
+            "Obsidian: New Project"
+    ));
 
     @Override
     public boolean handles(UINavigationContext context) {
         UICommand currentCommand = context.getCurrentCommand();
         String name = currentCommand.getMetadata(context.getUIContext()).getName();
-        if ("Obsidian: New Project".equals(name)) {
+        if (commandNames.contains(name)) {
             return true;
         }
         return false;

@@ -72,7 +72,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         final String key = KubernetesClientHelper.getUserCacheKey();
         List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> loadNamespaces(key));
-        LOG.info("Has namespaces: " + namespaces);
 
         kubernetesSpace.setValueChoices(namespaces);
         if (!namespaces.isEmpty()) {

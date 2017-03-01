@@ -19,7 +19,6 @@ import io.fabric8.devops.ProjectConfig;
 import io.fabric8.devops.ProjectConfigs;
 import io.fabric8.forge.addon.utils.CommandHelpers;
 import io.fabric8.forge.addon.utils.StopWatch;
-import io.fabric8.forge.devops.DevOpsEditStep;
 import io.fabric8.forge.devops.dto.PipelineDTO;
 import io.fabric8.forge.devops.dto.PipelineMetadata;
 import io.fabric8.forge.devops.dto.ProjectOverviewDTO;
@@ -60,7 +59,7 @@ import static io.fabric8.kubernetes.api.KubernetesHelper.loadYaml;
 
 public class ChoosePipelineStep extends AbstractProjectOverviewCommand implements UIWizardStep {
     public static final String JENKINSFILE = "Jenkinsfile";
-    private static final transient Logger LOG = LoggerFactory.getLogger(DevOpsEditStep.class);
+    private static final transient Logger LOG = LoggerFactory.getLogger(ChoosePipelineStep.class);
     private static final String DEFAULT_MAVEN_FLOW = "workflows/maven/CanaryReleaseStageAndApprovePromote.groovy";
     @Inject
     @WithAttributes(label = "Pipeline", description = "The Jenkinsfile used to define the Continous Delivery pipeline")

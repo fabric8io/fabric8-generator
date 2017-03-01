@@ -18,6 +18,8 @@ package io.fabric8.forge.generator.git;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.devops.ProjectConfigs;
+import io.fabric8.forge.generator.cache.CacheFacade;
+import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
 import io.fabric8.project.support.GitUtils;
 import io.fabric8.project.support.UserDetails;
@@ -27,11 +29,14 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.PersonIdent;
+import org.infinispan.Cache;
+import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 
@@ -39,6 +44,12 @@ import java.io.IOException;
  */
 public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
+    
+    @Inject
+    private CacheFacade cacheManager;
+
+    protected Cache<String, GitAccount> accountCache;
+    protected Cache<String, Iterable<GitOrganisationDTO>> organisationsCache;
 
     /**
      * The name of the upstream repo
@@ -48,6 +59,11 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
      * The default branch we make on creating repos
      */
     private String branch = "master";
+
+    public void initializeUI(final UIBuilder builder) throws Exception {
+        this.accountCache = cacheManager.getCache(CacheNames.GOGS_ACCOUNT_FROM_SECRET);
+        this.organisationsCache = cacheManager.getCache(CacheNames.GOGS_ORGANISATIONS);
+    }
 
     protected static String getOrganisationName(GitOrganisationDTO org) {
         String orgName = null;

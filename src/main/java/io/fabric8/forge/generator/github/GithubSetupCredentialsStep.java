@@ -47,6 +47,8 @@ public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep 
     private UIInput<String> gitEmail;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
+        super.initializeUI(builder);
+
         GitAccount details = loadGitAccountFromSecret(GitSecretNames.GITHUB_SECRET_NAME);
         if (details != null) {
             setIfNotBlank(gitUserName, details.getUsername());

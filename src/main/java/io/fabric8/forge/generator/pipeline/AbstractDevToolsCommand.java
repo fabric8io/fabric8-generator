@@ -113,7 +113,12 @@ public abstract class AbstractDevToolsCommand extends AbstractProjectCommand {
         UISelection<Object> selection = context.getSelection();
         if (selection != null) {
             Object object = selection.get();
-            if (object instanceof Resource) {
+            if (object instanceof File) {
+                File folder = (File) object;
+                if (Files.isDirectory(folder)) {
+                    return folder;
+                }
+            } else if (object instanceof Resource) {
                 File folder = ResourceUtil.getContextFile((Resource<?>) object);
                 if (folder != null && Files.isDirectory(folder)) {
                     return folder;

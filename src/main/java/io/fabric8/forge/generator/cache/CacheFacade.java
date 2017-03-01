@@ -41,12 +41,13 @@ public class CacheFacade {
     @Inject
     @Singleton
     public CacheFacade() {
-        manager.defineConfiguration(CacheNames.USER_NAMESPACES, createCacheConfiguration(1000, 30));
-        manager.defineConfiguration(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, createCacheConfiguration(1000, 30));
-        manager.defineConfiguration(CacheNames.GITHUB_ORGANISATIONS, createCacheConfiguration(1000, 30));
+        manager.defineConfiguration(CacheNames.USER_NAMESPACES, createCacheConfiguration(1000, 2 * 60));
+        
+        manager.defineConfiguration(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, createCacheConfiguration(1000, 2 * 60));
+        manager.defineConfiguration(CacheNames.GITHUB_ORGANISATIONS, createCacheConfiguration(1000, 60 * 5));
 
-        manager.defineConfiguration(CacheNames.GOGS_ACCOUNT_FROM_SECRET, createCacheConfiguration(1000, 30));
-        manager.defineConfiguration(CacheNames.GOGS_ORGANISATIONS, createCacheConfiguration(1000, 30));
+        manager.defineConfiguration(CacheNames.GOGS_ACCOUNT_FROM_SECRET, createCacheConfiguration(1000, 2 * 60));
+        manager.defineConfiguration(CacheNames.GOGS_ORGANISATIONS, createCacheConfiguration(1000, 60 * 5));
 
         LOG.info("starting caches");
         manager.start();

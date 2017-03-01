@@ -9,8 +9,6 @@ package io.fabric8.forge.generator.gogs;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.Configuration;
-import io.fabric8.forge.generator.cache.CacheFacade;
-import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.AbstractGitRepoStep;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
@@ -18,7 +16,6 @@ import io.fabric8.forge.generator.git.GitSecretNames;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.repo.git.RepositoryDTO;
 import io.fabric8.utils.Strings;
-import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
@@ -56,16 +53,11 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
     @WithAttributes(label = "Description", description = "The description of the new gogs repository")
     private UIInput<String> gitRepoDescription;
 
-    @Inject
-    private CacheFacade cacheManager;
-
     private GogsFacade gogs;
-    private Cache<String, GitAccount> accountCache;
-    private Cache<String, Iterable<GitOrganisationDTO>> organisationsCache;
+
 
     public void initializeUI(final UIBuilder builder) throws Exception {
-        this.accountCache = cacheManager.getCache(CacheNames.GOGS_ACCOUNT_FROM_SECRET);
-        this.organisationsCache = cacheManager.getCache(CacheNames.GOGS_ORGANISATIONS);
+        super.initializeUI(builder);
 
         this.gogs = createGithubFacade(builder.getUIContext());
 

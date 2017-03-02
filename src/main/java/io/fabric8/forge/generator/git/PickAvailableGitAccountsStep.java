@@ -9,7 +9,6 @@ package io.fabric8.forge.generator.git;
 
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
-import io.fabric8.forge.generator.github.GithubRepoStep;
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import org.infinispan.Cache;
@@ -37,8 +36,8 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @Inject
-    @WithAttributes(label = "git service user name", required = true, description = "Select which git provider you wish to use")
-    private UISelectOne<GitProvider> gitService;
+    @WithAttributes(label = "git provider", required = true, description = "Select which git provider you wish to use")
+    private UISelectOne<GitProvider> gitProvider;
 
     @Inject
     private CacheFacade cacheManager;
@@ -54,15 +53,15 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
         List<GitProvider> gitServices = gitProviderCache.computeIfAbsent(key, k -> GitProvider.loadGitProviders());
         int size = gitServices.size();
         if (size > 1) {
-            gitService.setValueChoices(gitServices);
-            gitService.setDefaultValue(gitServices.get(0));
-            gitService.setItemLabelConverter(new Converter<GitProvider, String>() {
+            gitProvider.setValueChoices(gitServices);
+            gitProvider.setDefaultValue(gitServices.get(0));
+            gitProvider.setItemLabelConverter(new Converter<GitProvider, String>() {
                 @Override
                 public String convert(GitProvider gitProvider) {
                     return gitProvider.getName();
                 }
             });
-            builder.add(gitService);
+            builder.add(gitProvider);
         }
     }
 
@@ -76,7 +75,7 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
     }
 
     protected void addRepoStep(NavigationResultBuilder builder) {
-        GitProvider value = gitService.getValue();
+        GitProvider value = gitProvider.getValue();
         value.addRepoStep(builder);
     }
 

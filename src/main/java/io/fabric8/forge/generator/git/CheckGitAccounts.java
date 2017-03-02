@@ -16,27 +16,39 @@
  */
 package io.fabric8.forge.generator.git;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.fabric8.forge.addon.utils.dto.OutputFormat;
 import org.jboss.forge.addon.ui.command.UICommand;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
+import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
+import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 
+import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
+
+import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 
 /**
  * A command which checks if we have a git account setup correctly
  */
 public class CheckGitAccounts implements UICommand {
 
+    @Inject
+    @WithAttributes(label = "Format", defaultValue = "Text", description = "Format output as text or json")
+    private UISelectOne<OutputFormat> format;
+
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(getClass()).name("fabric8: Git Accounts Configured")
+        return Metadata.forCommand(getClass()).name("fabric8: Check Git Accounts")
                 .description("Checks that you have at least one git repository account setup")
                 .category(Categories.create("Fabric8"));
     }
@@ -45,9 +57,11 @@ public class CheckGitAccounts implements UICommand {
     public boolean isEnabled(UIContext context) {
         return true;
     }
+    
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
+        builder.add(format);
     }
 
     @Override
@@ -58,11 +72,23 @@ public class CheckGitAccounts implements UICommand {
     @Override
     public Result execute(UIExecutionContext uiExecutionContext) throws Exception {
         List<GitProvider> gitServices = GitProvider.loadGitProviders();
+        List<String> validServices = new ArrayList<>();
         for (GitProvider gitService : gitServices) {
             if (gitService.isConfiguredCorrectly()) {
-                return Results.success();
+                validServices.add(gitService.getName());
             }
         }
-        return Results.fail("No git providers configured");
+        return Results.success(formatResult(validServices));
+    }
+
+
+    protected String formatResult(List<String> result) throws JsonProcessingException {
+        OutputFormat outputFormat = format.getValue();
+        switch (outputFormat) {
+            case JSON:
+                return toJson(result);
+            default:
+                return "git providers: " + String.join(", ", result);
+        }
     }
 }

@@ -17,13 +17,11 @@
 package io.fabric8.forge.generator.pipeline;
 
 import io.fabric8.forge.addon.utils.StopWatch;
-import io.fabric8.forge.devops.dto.ProjectOverviewDTO;
-import io.fabric8.forge.devops.springboot.IOHelper;
 import io.fabric8.utils.Files;
+import io.fabric8.utils.IOHelpers;
 import org.jboss.forge.addon.ui.context.UIContext;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +58,7 @@ public abstract class AbstractProjectOverviewCommand extends AbstractDevToolsCom
                                overview.addPerspective("forge");
                                // check if we have camel/funktion/and others in the maven project
                                try {
-                                   String text = IOHelper.loadText(new FileInputStream(file));
+                                   String text = IOHelpers.readFully(file);
                                    // just do a quick scan for dependency names as using forge project API is slower
                                    if (text.contains("org.apache.camel")) {
                                        overview.addPerspective("camel");

@@ -22,6 +22,16 @@ import io.fabric8.utils.Strings;
  */
 public class Configuration {
     private static Boolean _onPremise;
+    private static boolean initialised;
+    private static String keycloakSaaSURL;
+
+    public static String keycloakSaaSURL() {
+        if (!initialised) {
+            initialised = true;
+            keycloakSaaSURL = System.getenv(EnvironmentVariables.KEYCLOAK_SAAS);
+        }
+        return keycloakSaaSURL;
+    }
 
     /**
      * Returns true if the generator is running on premise such as when used inside the fabric8 upstream project.
@@ -30,10 +40,6 @@ public class Configuration {
      * other kinds of on premise git repositories.
      */
     public static boolean isOnPremise() {
-        if (_onPremise == null) {
-            String value = System.getenv(EnvironmentVariables.ON_PREMISE);
-            _onPremise = Strings.isNotBlank(value) && value.equalsIgnoreCase("true");
-        }
-        return _onPremise.booleanValue();
+        return Strings.isNullOrBlank(keycloakSaaSURL());
     }
 }

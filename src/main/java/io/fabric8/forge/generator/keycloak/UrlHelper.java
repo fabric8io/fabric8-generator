@@ -14,14 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator;
+package io.fabric8.forge.generator.keycloak;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  */
-public class EnvironmentVariables {
-    public static final String KEYCLOAK_SAAS = "KEYCLOAK_SAAS_URL";
-    public static final String GOGS_URL = "GOGS_URL";
-    public static final String NAMESPACE = "KUBERNETES_NAMESPACE";
+public final class UrlHelper {
 
-    public static final String TESTING_OAUTH_HEADER = "TESTING_OAUTH_HEADER";
+    private UrlHelper() {
+    }
+
+    public static Map<String, String> splitQuery(String query) {
+        Map<String, String> queryPairs = new HashMap<String, String>();
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            int delimiterIndex = pair.indexOf("=");
+            queryPairs.put(pair.substring(0, delimiterIndex), pair.substring(delimiterIndex + 1));
+        }
+        return queryPairs;
+    }
+
 }

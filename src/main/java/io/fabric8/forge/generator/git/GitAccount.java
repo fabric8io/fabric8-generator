@@ -16,6 +16,8 @@
  */
 package io.fabric8.forge.generator.git;
 
+import io.fabric8.forge.generator.keycloak.KeycloakEndpoint;
+import io.fabric8.forge.generator.keycloak.TokenHelper;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -24,6 +26,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ClientResource;
 import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
+import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.slf4j.Logger;
@@ -53,6 +56,11 @@ public class GitAccount {
         this.email = email;
     }
 
+    public static GitAccount loadFromSaaS(UIContext context) {
+        String authToken = TokenHelper.getMandatoryAuthTokenFor(context, KeycloakEndpoint.GET_GITHUB_TOKEN);
+        return new GitAccount(null, authToken, null, null);
+    }
+
     /**
      * Creates a default set of git account details using environment variables for testing
      */
@@ -66,13 +74,6 @@ public class GitAccount {
 
     public static GitAccount loadGitDetailsFromSecret(Cache<String, GitAccount> cache, String secretName) {
         final String key = KubernetesClientHelper.getUserCacheKey();
-        GitAccount answer = cache.get(key);
-/*
-        if (answer != null) {
-            LOG.info("============== CACHED data for key " + key + " = " + answer);
-            return answer;
-        }
-*/
         return cache.computeIfAbsent(key, k -> {
             KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForUser();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
@@ -178,6 +179,9 @@ public class GitAccount {
     }
 
     public boolean hasValidData() {
+        if (Strings.isNotBlank(token)) {
+            return true;
+        }
         return Strings.isNotBlank(username) && Strings.isNotBlank(email) &&
                 (Strings.isNotBlank(password) || Strings.isNotBlank(token));
     }
@@ -190,4 +194,5 @@ public class GitAccount {
         }
         throw new IllegalArgumentException("No cache key available for user: " + this);
     }
+
 }

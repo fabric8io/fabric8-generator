@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  */
@@ -49,7 +50,7 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
     private CacheFacade cacheManager;
 
     protected Cache<String, GitAccount> accountCache;
-    protected Cache<String, Iterable<GitOrganisationDTO>> organisationsCache;
+    protected Cache<String, Collection<GitOrganisationDTO>> organisationsCache;
 
     /**
      * The name of the upstream repo

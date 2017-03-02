@@ -14,14 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator;
+package io.fabric8.forge.generator.token;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.JWTDecodeException;
 
 /**
  */
-public class EnvironmentVariables {
-    public static final String KEYCLOAK_SAAS = "KEYCLOAK_SAAS_URL";
-    public static final String GOGS_URL = "GOGS_URL";
-    public static final String NAMESPACE = "KUBERNETES_NAMESPACE";
+public class ParseToken {
 
-    public static final String TESTING_OAUTH_HEADER = "TESTING_OAUTH_HEADER";
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            System.out.println("Please specify a JWT token as an argument!");
+            return;
+        }
+        String token = args[0];
+        try {
+            JWT jwt = JWT.decode(token);
+            System.out.println("Got: " + jwt);
+            System.out.println("Token: " + jwt.getToken());
+        } catch (JWTDecodeException e) {
+            System.out.println("Invalid token: " + e);
+            e.printStackTrace();
+        }
+    }
 }

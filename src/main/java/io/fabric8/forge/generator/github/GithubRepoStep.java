@@ -35,6 +35,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_URL;
 
@@ -62,7 +64,7 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
         this.github = createGithubFacade(builder.getUIContext());
 
         // TODO cache this per user every say 30 seconds!
-        Iterable<GitOrganisationDTO> organisations = new ArrayList<>();
+        Collection<GitOrganisationDTO> organisations = new ArrayList<>();
         if (github != null && github.isDetailsValid()) {
             String orgKey = github.getDetails().getUserCacheKey();
             organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGithubOrganisations(builder));
@@ -85,22 +87,27 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
         }
         String projectName = getProjectName(builder.getUIContext());
         gitRepository.setDefaultValue(projectName);
-        builder.add(gitOrganisation);
+        if (organisations.size() > 1) {
+            builder.add(gitOrganisation);
+        }
         builder.add(gitRepository);
         builder.add(gitRepoDescription);
     }
 
     private GitHubFacade createGithubFacade(UIContext context) {
         GitAccount details = (GitAccount) context.getAttributeMap().get(AttributeMapKeys.GIT_ACCOUNT);
-        if (details != null) {
-            return new GitHubFacade(details);
-        } else if (Configuration.isOnPremise()) {
-            details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GITHUB_SECRET_NAME);
-            return new GitHubFacade(details);
+        if (details == null) {
+            if (Configuration.isOnPremise()) {
+                details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GITHUB_SECRET_NAME);
+            } else {
+                details = GitAccount.loadFromSaaS(context);
+            }
         }
-
-        // lets try find it from KeyCloak etc...
-        return new GitHubFacade();
+        if (details == null) {
+            LOG.warn("No git details found - assuming local testing mode!");
+            return new GitHubFacade();
+        }
+        return new GitHubFacade(details);
     }
 
     @Override
@@ -125,7 +132,12 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
         String org = getOrganisationName(gitOrganisation.getValue());
         String repo = gitRepository.getValue();
 
-        LOG.info("Creating github repository " + org + "/" + repo);
+        String orgOrNoUser = org;
+        if (Strings.isNotBlank(org)) {
+            orgOrNoUser = "user";
+        }
+        String orgAndRepo = orgOrNoUser + "/" + repo;
+        LOG.info("Creating github repository " + orgAndRepo);
 
         UIContext uiContext = context.getUIContext();
         File basedir = getSelectionFolder(uiContext);
@@ -133,7 +145,7 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
             return Results.fail("No project directory exists! " + basedir);
         }
 
-        String gitUrl = "https://github.com/" + org + "/" + repo + ".git";
+        String gitUrl = "https://github.com/" + orgAndRepo + ".git";
         try {
             GHRepository repository = github.createRepository(org, repo, gitRepoDescription.getValue());
             URL htmlUrl = repository.getHtmlUrl();
@@ -141,8 +153,8 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
                 gitUrl = htmlUrl.toString() + ".git";
             }
         } catch (IOException e) {
-            LOG.error("Failed to create repository  " + org + "/" + repo + " " + e, e);
-            return Results.fail("Failed to create repository  " + org + "/" + repo + " " + e, e);
+            LOG.error("Failed to create repository  " + orgAndRepo + " " + e, e);
+            return Results.fail("Failed to create repository  " + orgAndRepo + " " + e, e);
         }
 
         LOG.info("Created repository: " + gitUrl);

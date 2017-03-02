@@ -29,6 +29,7 @@ import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +85,7 @@ public class GitHubFacade {
     }
 
 
-    public Iterable<GitOrganisationDTO> loadGithubOrganisations(UIBuilder builder) {
+    public Collection<GitOrganisationDTO> loadGithubOrganisations(UIBuilder builder) {
         SortedSet<GitOrganisationDTO> organisations = new TreeSet();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {
@@ -104,6 +105,14 @@ public class GitHubFacade {
                             organisations.add(dto);
                         }
                     }
+                }
+            } catch (HttpException e) {
+                if (e.getResponseCode() == 403) {
+                    // don't have the karma for listing organisations
+                    LOG.warn("User doesn't have karma to list organisations: " + e);
+                    return organisations;
+                } else {
+                    LOG.warn("Failed to load github organisations for user: " + details.getUsername() + " due to : " + e, e);
                 }
             } catch (IOException e) {
                 LOG.warn("Failed to load github organisations for user: " + details.getUsername() + " due to : " + e, e);
@@ -140,7 +149,7 @@ public class GitHubFacade {
 
     public GHRepository createRepository(String orgName, String repoName, String description) throws IOException {
         GHCreateRepositoryBuilder builder;
-        if (orgName.equals(details.getUsername())) {
+        if (Strings.isNullOrBlank(orgName) || orgName.equals(details.getUsername())) {
             builder = github.createRepository(repoName);
         } else {
             builder = github.getOrganization(orgName).createRepository(repoName);

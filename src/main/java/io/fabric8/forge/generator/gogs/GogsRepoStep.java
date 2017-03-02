@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_URL;
 
@@ -62,7 +63,7 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
         this.gogs = createGitFacade(builder.getUIContext());
 
         // TODO cache this per user every say 30 seconds!
-        Iterable<GitOrganisationDTO> organisations = new ArrayList<>();
+        Collection<GitOrganisationDTO> organisations = new ArrayList<>();
         if (gogs != null && gogs.isDetailsValid()) {
             String orgKey = gogs.getDetails().getUserCacheKey();
             organisations = organisationsCache.computeIfAbsent(orgKey, k -> gogs.loadOrganisations(builder));

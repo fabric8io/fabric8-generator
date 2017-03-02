@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -66,7 +67,7 @@ public class GogsFacade {
         }
     }
 
-    public Iterable<GitOrganisationDTO> loadOrganisations(UIBuilder builder) {
+    public Collection<GitOrganisationDTO> loadOrganisations(UIBuilder builder) {
         SortedSet<GitOrganisationDTO> organisations = new TreeSet();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {

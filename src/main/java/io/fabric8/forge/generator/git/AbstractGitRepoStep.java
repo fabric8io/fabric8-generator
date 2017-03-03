@@ -45,13 +45,10 @@ import java.util.Collection;
  */
 public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
-    
-    @Inject
-    private CacheFacade cacheManager;
-
     protected Cache<String, GitAccount> accountCache;
     protected Cache<String, Collection<GitOrganisationDTO>> organisationsCache;
-
+    @Inject
+    private CacheFacade cacheManager;
     /**
      * The name of the upstream repo
      */
@@ -61,17 +58,17 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
      */
     private String branch = "master";
 
-    public void initializeUI(final UIBuilder builder) throws Exception {
-        this.accountCache = cacheManager.getCache(CacheNames.GOGS_ACCOUNT_FROM_SECRET);
-        this.organisationsCache = cacheManager.getCache(CacheNames.GOGS_ORGANISATIONS);
-    }
-
     protected static String getOrganisationName(GitOrganisationDTO org) {
         String orgName = null;
         if (org != null) {
             orgName = org.getName();
         }
         return orgName;
+    }
+
+    public void initializeUI(final UIBuilder builder) throws Exception {
+        this.accountCache = cacheManager.getCache(CacheNames.GOGS_ACCOUNT_FROM_SECRET);
+        this.organisationsCache = cacheManager.getCache(CacheNames.GOGS_ORGANISATIONS);
     }
 
     public void importNewGitProject(UserDetails userDetails, File basedir, String message, String gitUrl)
@@ -102,6 +99,7 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
             try {
                 IOHelpers.writeFully(jenkinsFile, pipelineText);
             } catch (IOException e) {
+                LOG.error("Failed to write file " + jenkinsFile + ". " + e, e);
                 return Results.fail("Failed to write file " + jenkinsFile + ". " + e, e);
             }
         }

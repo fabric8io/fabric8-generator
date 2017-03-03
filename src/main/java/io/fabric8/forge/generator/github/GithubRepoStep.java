@@ -36,8 +36,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ACCOUNT;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_OWNER_NAME;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAME;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_URL;
 
 /**
@@ -145,6 +147,7 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
             return Results.fail("No project directory exists! " + basedir);
         }
 
+        String gitOwnerName = org;
         String gitUrl = "https://github.com/" + orgAndRepo + ".git";
         try {
             GHRepository repository = github.createRepository(org, repo, gitRepoDescription.getValue());
@@ -152,6 +155,7 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
             if (htmlUrl != null) {
                 gitUrl = htmlUrl.toString() + ".git";
             }
+            gitOwnerName = repository.getOwnerName();
         } catch (IOException e) {
             LOG.error("Failed to create repository  " + orgAndRepo + " " + e, e);
             return Results.fail("Failed to create repository  " + orgAndRepo + " " + e, e);
@@ -159,6 +163,9 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
 
         LOG.info("Created repository: " + gitUrl);
         uiContext.getAttributeMap().put(GIT_URL, gitUrl);
+        uiContext.getAttributeMap().put(GIT_OWNER_NAME, gitOwnerName);
+        uiContext.getAttributeMap().put(GIT_REPO_NAME, repo);
+        uiContext.getAttributeMap().put(GIT_ACCOUNT, github.getDetails());
 
         Result result = updateGitURLInJenkinsfile(basedir, gitUrl);
         if (result != null) {
@@ -174,5 +181,6 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
         }
         return Results.success();
     }
+
 
 }

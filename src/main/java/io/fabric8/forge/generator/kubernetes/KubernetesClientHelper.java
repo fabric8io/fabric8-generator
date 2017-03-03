@@ -75,7 +75,8 @@ public class KubernetesClientHelper {
         if (Strings.isNullOrBlank(userName)) {
             throw new IllegalStateException("No kubernetes username could be found!");
         }
-        return "user-secrets-" + userName.replace(':', '-');
+        // TODO replace with a better function that ensures we generate a valid namespace name
+        return "user-secrets-" + userName.toLowerCase().replace(':', '-').replace('@', '-').replace('.', '-');
     }
 
     /**

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.MediaType;
 import java.util.Map;
 
 /**
@@ -53,8 +54,7 @@ public class KeycloakClient {
     private String getResponseBody(KeycloakEndpoint endpoint, String authHeader) {
         Client client = ClientBuilder.newClient();
         return client.target(endpoint.toString())
-                //.request(MediaType.APPLICATION_JSON)
-                .request("application/jwt")
+                .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", authHeader)
                 .get(String.class);
 

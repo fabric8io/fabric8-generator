@@ -14,18 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator;
+package io.fabric8.forge.generator.kubernetes;
 
-import io.fabric8.forge.generator.git.GitAccount;
+import io.fabric8.utils.Strings;
+
+import java.util.Base64;
 
 /**
  */
-public class AttributeMapKeys {
-    public static final String NAME = "name";
-    public static final String TYPE = "type";
-    public static final String PROJECT_DIRECTORY_FILE = "projectDirectoryFile";
-    public static final String GIT_URL = "gitUrl";
-    public static final String GIT_OWNER_NAME = "gitOwnerName";
-    public static final String GIT_REPO_NAME = "gitRepositoryName";
-    public static final Class<GitAccount> GIT_ACCOUNT = GitAccount.class;
+public class Base64Helper {
+    public static String base64decode(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        return new String(Base64.getDecoder().decode(text));
+    }
+
+    public static String base64encode(String text) {
+        if (Strings.isNullOrBlank(text)) {
+            return text;
+        }
+        return Base64.getEncoder().encodeToString(text.getBytes());
+    }
 }

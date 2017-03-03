@@ -32,11 +32,9 @@ import javax.inject.Inject;
 /**
  */
 public abstract class AbstractGitSetupCredentialsStep extends AbstractDevToolsCommand {
+    protected Cache<String, GitAccount> accountCache;
     @Inject
     private CacheFacade cacheManager;
-
-    protected Cache<String, GitAccount> accountCache;
-
     private KubernetesClient kubernetesClient;
     private String namespace;
 

@@ -39,7 +39,7 @@ public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep 
     private UIInput<String> gitUserName;
 
     @Inject
-    @WithAttributes(label = "github password", required = true, description = "Your github passcode or password", type = InputType.SECRET)
+    @WithAttributes(label = "github password or token", required = true, description = "Your github personal access token or password", type = InputType.SECRET)
     private UIInput<String> gitPassword;
 
     @Inject

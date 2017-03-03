@@ -46,7 +46,7 @@ public class CheckGitAccounts implements UICommand {
     public boolean isEnabled(UIContext context) {
         return true;
     }
-    
+
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {

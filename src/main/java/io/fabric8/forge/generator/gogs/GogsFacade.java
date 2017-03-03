@@ -112,7 +112,7 @@ public class GogsFacade {
     }
 
     public UserDetails createUserDetails(String gitUrl) {
-        return new UserDetails(gitUrl, gitUrl, details.getUsername(), details.getPassword(), details.getEmail());
+        return new UserDetails(gitUrl, gitUrl, details.getUsername(), details.tokenOrPassword(), details.getEmail());
     }
 
     public GitAccount getDetails() {

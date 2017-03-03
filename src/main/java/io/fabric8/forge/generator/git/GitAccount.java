@@ -21,6 +21,7 @@ import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import io.fabric8.forge.generator.keycloak.KeycloakEndpoint;
 import io.fabric8.forge.generator.keycloak.TokenHelper;
+import io.fabric8.forge.generator.kubernetes.Base64Helper;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -36,10 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import static io.fabric8.forge.generator.pipeline.JenkinsPipelineLibrary.getSystemPropertyOrDefault;
 
@@ -62,7 +61,6 @@ public class GitAccount {
     }
 
     public static GitAccount loadFromSaaS(UIContext context) {
-
         String authHeader = TokenHelper.getMandatoryAuthHeader(context);
         String jwtToken = authHeader;
         int idx = authHeader.indexOf(' ');
@@ -108,7 +106,7 @@ public class GitAccount {
             KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForUser();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
             GitAccount details = loadFromSecret(kubernetesClient, namespace, secretName);
-            LOG.info("Loaded details: " + details + " for cache key: " +key);
+            LOG.info("Loaded details: " + details + " for cache key: " + key);
             return details;
         });
     }
@@ -119,10 +117,10 @@ public class GitAccount {
         if (secret != null) {
             Map<String, String> data = secret.getData();
             if (data != null) {
-                String username = base64decode(data.get(GitSecretKeys.USERNAME));
-                String token = base64decode(data.get(GitSecretKeys.TOKEN));
-                String password = base64decode(data.get(GitSecretKeys.PASSWORD));
-                String email = base64decode(data.get(GitSecretKeys.EMAIL));
+                String username = Base64Helper.base64decode(data.get(GitSecretKeys.USERNAME));
+                String token = Base64Helper.base64decode(data.get(GitSecretKeys.TOKEN));
+                String password = Base64Helper.base64decode(data.get(GitSecretKeys.PASSWORD));
+                String email = Base64Helper.base64decode(data.get(GitSecretKeys.EMAIL));
                 GitAccount gitAccount = new GitAccount(username, token, password, email);
                 LOG.info("Found: " + gitAccount);
                 return gitAccount;
@@ -153,10 +151,10 @@ public class GitAccount {
         }
         secret.setData(data);
 
-        data.put(GitSecretKeys.USERNAME, base64encode(details.getUsername()));
-        data.put(GitSecretKeys.TOKEN, base64encode(details.getToken()));
-        data.put(GitSecretKeys.PASSWORD, base64encode(details.getPassword()));
-        data.put(GitSecretKeys.EMAIL, base64encode(details.getEmail()));
+        data.put(GitSecretKeys.USERNAME, Base64Helper.base64encode(details.getUsername()));
+        data.put(GitSecretKeys.TOKEN, Base64Helper.base64encode(details.getToken()));
+        data.put(GitSecretKeys.PASSWORD, Base64Helper.base64encode(details.getPassword()));
+        data.put(GitSecretKeys.EMAIL, Base64Helper.base64encode(details.getEmail()));
 
         try {
             if (update) {
@@ -170,26 +168,19 @@ public class GitAccount {
         return null;
     }
 
-    private static String base64decode(String text) {
-        if (text == null || text.isEmpty()) {
-            return text;
-        }
-        return new String(Base64.getDecoder().decode(text));
-    }
-
-    private static String base64encode(String text) {
-        if (Strings.isNullOrBlank(text)) {
-            return text;
-        }
-        return Base64.getEncoder().encodeToString(text.getBytes());
-    }
-
     @Override
     public String toString() {
         return "GitAccount{" +
                 "username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 '}';
+    }
+
+    public String tokenOrPassword() {
+        if (Strings.isNotBlank(token)) {
+            return token;
+        }
+        return password;
     }
 
     public String getUsername() {
@@ -225,4 +216,13 @@ public class GitAccount {
         throw new IllegalArgumentException("No cache key available for user: " + this);
     }
 
+    public String mandatoryAuthHeader() {
+        // TODO if we only have a password we should maybe default to just using the github java API
+        // to create webhooks?
+        String token = tokenOrPassword();
+        if (Strings.isNullOrBlank(token)) {
+            throw new IllegalArgumentException("No token or password available for github access!");
+        }
+        return "Bearer " + token;
+    }
 }

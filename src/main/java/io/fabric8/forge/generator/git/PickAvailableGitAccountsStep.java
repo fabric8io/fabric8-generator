@@ -34,15 +34,12 @@ import java.util.List;
  */
 public class PickAvailableGitAccountsStep extends AbstractGitCommand implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
-
+    protected Cache<String, List<GitProvider>> gitProviderCache;
     @Inject
     @WithAttributes(label = "git provider", required = true, description = "Select which git provider you wish to use")
     private UISelectOne<GitProvider> gitProvider;
-
     @Inject
     private CacheFacade cacheManager;
-
-    protected Cache<String, List<GitProvider>> gitProviderCache;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
@@ -52,9 +49,11 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
         String key = KubernetesClientHelper.getUserCacheKey();
         List<GitProvider> gitServices = gitProviderCache.computeIfAbsent(key, k -> GitProvider.loadGitProviders());
         int size = gitServices.size();
+        if (size > 0) {
+            gitProvider.setDefaultValue(gitServices.get(0));
+        }
         if (size > 1) {
             gitProvider.setValueChoices(gitServices);
-            gitProvider.setDefaultValue(gitServices.get(0));
             gitProvider.setItemLabelConverter(new Converter<GitProvider, String>() {
                 @Override
                 public String convert(GitProvider gitProvider) {
@@ -76,6 +75,9 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
 
     protected void addRepoStep(NavigationResultBuilder builder) {
         GitProvider value = gitProvider.getValue();
+        if (value == null) {
+            throw new IllegalArgumentException("No git providers!");
+        }
         value.addRepoStep(builder);
     }
 

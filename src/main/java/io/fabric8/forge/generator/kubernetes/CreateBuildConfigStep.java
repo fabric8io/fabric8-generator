@@ -311,8 +311,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             out.close();
             int status = connection.getResponseCode();
             String message = connection.getResponseMessage();
-            LOG.info("Got response code from Jenkins: " + status + " message: " + message);
-            if (status != 200) {
+            LOG.info("Got response code from github " + createWebHookUrl+ " status: " + status + " message: " + message);
+            if (status < 200 || status >= 300) {
                 LOG.error("Failed to create the github web hook at: " + createWebHookUrl + ". Status: " + status + " message: " + message);
                 throw new IllegalStateException("Failed to create the github web hook at: " + createWebHookUrl + ". Status: " + status + " message: " + message);
             }

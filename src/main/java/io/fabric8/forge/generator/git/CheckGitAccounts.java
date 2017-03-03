@@ -16,36 +16,24 @@
  */
 package io.fabric8.forge.generator.git;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.fabric8.forge.addon.utils.dto.OutputFormat;
 import org.jboss.forge.addon.ui.command.UICommand;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
-import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
-import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 
 /**
  * A command which checks if we have a git account setup correctly
  */
 public class CheckGitAccounts implements UICommand {
-
-    @Inject
-    @WithAttributes(label = "Format", defaultValue = "Text", description = "Format output as text or json")
-    private UISelectOne<OutputFormat> format;
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
@@ -62,7 +50,6 @@ public class CheckGitAccounts implements UICommand {
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        builder.add(format);
     }
 
     @Override
@@ -79,19 +66,7 @@ public class CheckGitAccounts implements UICommand {
                 validServices.add(gitService.getName());
             }
         }
-        return Results.success(formatResult(uiExecutionContext, validServices));
-    }
-
-
-    protected String formatResult(UIExecutionContext uiExecutionContext, List<String> result) throws JsonProcessingException {
-        Map<Object, Object> attributeMap = uiExecutionContext.getUIContext().getAttributeMap();
-        OutputFormat outputFormat = format.getValue();
-        switch (outputFormat) {
-            case JSON:
-                attributeMap.put("org.jboss.forge.ui.Results.ENTITY", result);
-                return toJson(result);
-            default:
-                return "git providers: " + String.join(", ", result);
-        }
+        String message = "git providers: " + String.join(", ", validServices);
+        return Results.success(message, validServices);
     }
 }

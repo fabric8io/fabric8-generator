@@ -7,14 +7,18 @@
       <artifactId>jboss-parent</artifactId>
       <version>22</version>
    </parent>
+
    <groupId>io.fabric8.forge</groupId>
    <artifactId>fabric8-generator</artifactId>
    <version>1.0.0-SNAPSHOT</version>
+
    <properties>
+      <fabric8.version>2.2.199</fabric8.version>
+
       <version.furnace>2.25.2.Final</version.furnace>
-      <version.forge>3.6.0.Alpha1</version.forge>
+      <version.forge>3.6.0.Alpha2</version.forge>
       <version.wildfly-swarm>2017.2.0</version.wildfly-swarm>
-      <version.fabric8.devops>2.3.90</version.fabric8.devops>
+      <fabric8-forge.version>2.3.90</fabric8-forge.version>
       <version.vertx>1.2.1</version.vertx>
       <kohsuke.github-api.version>1.84</kohsuke.github-api.version>
       <infinispan-embedded.version>9.0.0.CR2</infinispan-embedded.version>
@@ -97,6 +101,26 @@
          </plugin>
       </plugins>
    </build>
+
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+           <groupId>io.fabric8</groupId>
+           <artifactId>fabric8-project</artifactId>
+           <version>${fabric8.version}</version>
+           <type>pom</type>
+           <scope>import</scope>
+         </dependency>
+         <dependency>
+            <groupId>org.jboss.forge</groupId>
+            <artifactId>forge-bom</artifactId>
+            <version>${version.forge}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
+   
    <dependencies>
       <dependency>
          <groupId>org.kohsuke</groupId>
@@ -114,16 +138,99 @@
           <artifactId>obsidian-generator</artifactId>
           <classifier>forge-addon</classifier>
           <version>1.0.0-SNAPSHOT</version>
+         <exclusions>
+            <exclusion>
+               <groupId>io.fabric8.forge.devops</groupId>
+               <artifactId>*</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
 
       <!-- 3rd Party addons -->
       <!-- Spring Boot -->
+<!--
       <dependency>
          <groupId>io.fabric8.forge</groupId>
          <artifactId>devops</artifactId>
          <classifier>forge-addon</classifier>
-         <version>${version.fabric8.devops}</version>
+         <version>${fabric8-forge.version}</version>
       </dependency>
+-->
+
+      <dependency>
+        <groupId>io.fabric8.forge</groupId>
+        <artifactId>utils</artifactId>
+        <version>${fabric8-forge.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.fabric8</groupId>
+        <artifactId>kubernetes-api</artifactId>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      
+      <dependency>
+         <!-- TODO we should be able to remove this dependency -->
+         <groupId>io.fabric8</groupId>
+         <artifactId>fabric8-devops</artifactId>
+      </dependency>
+      <dependency>
+         <groupId>io.fabric8</groupId>
+         <artifactId>fabric8-project-utils</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>io.fabric8</groupId>
+               <artifactId>gitrepo-api</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>io.fabric8</groupId>
+         <artifactId>gitrepo-resteasy</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>org.jboss.resteasy</groupId>
+               <artifactId>*</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+
+      <dependency>
+          <groupId>com.auth0</groupId>
+          <artifactId>java-jwt</artifactId>
+          <version>3.1.0</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jboss.forge.addon</groupId>
+         <artifactId>rest-client</artifactId>
+         <classifier>forge-addon</classifier>
+      </dependency>
+
+<!--
+      <dependency>
+         <groupId>org.jboss.forge.addon</groupId>
+         <artifactId>slf4j</artifactId>
+         <classifier>forge-addon</classifier>
+      </dependency>
+      <dependency>
+         <groupId>org.jboss.forge.addon</groupId>
+         <artifactId>maven</artifactId>
+         <classifier>javaee-api</classifier>
+         <classifier>forge-addon</classifier>
+      </dependency>
+-->
+
       <dependency>
          <groupId>me.escoffier.forge</groupId>
          <artifactId>vertx-forge-addon</artifactId>
@@ -193,17 +300,7 @@
          <scope>test</scope>
       </dependency>
    </dependencies>
-   <dependencyManagement>
-      <dependencies>
-         <dependency>
-            <groupId>org.jboss.forge</groupId>
-            <artifactId>forge-bom</artifactId>
-            <version>${version.forge}</version>
-            <type>pom</type>
-            <scope>import</scope>
-         </dependency>
-      </dependencies>
-   </dependencyManagement>
+
    <profiles>
       <profile>
          <id>release</id>

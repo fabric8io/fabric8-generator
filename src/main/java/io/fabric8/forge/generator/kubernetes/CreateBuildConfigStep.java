@@ -60,6 +60,7 @@ import javax.net.ssl.SSLSession;
 import javax.ws.rs.RedirectionException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -68,7 +69,6 @@ import javax.ws.rs.core.Response;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -259,10 +259,11 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         String authHeader = details.mandatoryAuthHeader();
         String createWebHookUrl = URLUtils.pathJoin("https://api.github.com/repos/", gitOwnerName, gitRepoName, "/hooks");
         try {
-            return invokeRequestWithRedirectResponse(createWebHookUrl,
+            Client client = createSecureClient();
+            return invokeRequestWithRedirectResponse(client, createWebHookUrl,
                     target -> target.request(MediaType.APPLICATION_JSON).
                             header("Authorization", authHeader).
-                            post(Entity.entity(body.getBytes(), MediaType.APPLICATION_JSON), Response.class));
+                            post(Entity.json(new ByteArrayInputStream(body.getBytes())), Response.class));
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create the github web hook at: " + createWebHookUrl + ". " + e, e);
         }
@@ -346,7 +347,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
 
     private Response ensureJenkinsCDOrganisationJobCreated(String jenkinsUrl, String authHeader, String gitOwnerName, String gitRepoName) {
-        String getUrl = URLUtils.pathJoin(jenkinsUrl, "/jobs/" + gitOwnerName + "/config.xml");
+        String getUrl = URLUtils.pathJoin(jenkinsUrl, "/job/" + gitOwnerName + "/config.xml");
         String createUrl = URLUtils.pathJoin(jenkinsUrl, "/createItem?name=" + gitOwnerName);
 
         Document document = null;
@@ -355,8 +356,10 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                     target -> target.request(MediaType.TEXT_XML).
                             header("Authorization", authHeader).
                             get(Response.class));
-            Object entity = response.getEntity();
-            document = parseEntityAsXml(entity);
+            document = response.readEntity(Document.class);
+            if (document == null) {
+                document = parseEntityAsXml(response.readEntity(String.class));
+            }
         } catch (Exception e) {
             LOG.warn("Failed to get gitub org job at " + getUrl + ". Probably does not exist? " + e, e);
         }
@@ -434,7 +437,10 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     }
 
     protected Response invokeRequestWithRedirectResponse(String url, Function<WebTarget, Response> callback) {
-        Client client = createClient();
+        return invokeRequestWithRedirectResponse(createClient(), url, callback);
+    }
+
+    protected Response invokeRequestWithRedirectResponse(Client client, String url, Function<WebTarget, Response> callback) {
         WebTarget target = client.target(url);
         boolean redirected = false;
         Response response = null;
@@ -442,23 +448,28 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             try {
                 response = callback.apply(target);
                 int status = response.getStatus();
-                LOG.info("Response from " + url + " is " + status);
+                String reasonPhrase = "";
+                Response.StatusType statusInfo = response.getStatusInfo();
+                if (statusInfo != null) {
+                    reasonPhrase = statusInfo.getReasonPhrase();
+                }
+                LOG.info("Response from " + url + " is " + status + " " + reasonPhrase);
                 if (status == 302) {
                     if (redirected) {
-                        LOG.warn("Failed to process " + url + " and got status: " + status, response);
-                        throw new WebApplicationException("Failed to process " + url + " and got status: " + status, response);
+                        LOG.warn("Failed to process " + url + " and got status: " + status + " " + reasonPhrase, response);
+                        throw new WebApplicationException("Failed to process " + url + " and got status: " + status + " " + reasonPhrase, response);
                     }
                     redirected = true;
                     URI uri = response.getLocation();
                     if (uri == null) {
-                        LOG.warn("Failed to process " + url + " and got status: " + status + " but no location header!", response);
-                        throw new WebApplicationException("Failed to process " + url + " and got status: " + status + " but no location header!", response);
+                        LOG.warn("Failed to process " + url + " and got status: " + status + " " + reasonPhrase + " but no location header!", response);
+                        throw new WebApplicationException("Failed to process " + url + " and got status: " + status + " " + reasonPhrase + " but no location header!", response);
                     }
                     url = uri.toString();
                     target = client.target(uri);
                 } else if (status < 200 || status >= 300) {
-                    LOG.warn("Failed to process " + url + " and got status: " + status, response);
-                    throw new WebApplicationException("Failed to process " + url + " and got status: " + status, response);
+                    LOG.warn("Failed to process " + url + " and got status: " + status + " " + reasonPhrase, response);
+                    throw new WebApplicationException("Failed to process " + url + " and got status: " + status + " " + reasonPhrase, response);
                 } else {
                     return response;
                 }
@@ -473,6 +484,10 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
         }
         return response;
+    }
+
+    private Client createSecureClient() {
+        return ClientBuilder.newClient();
     }
 
     private Client createClient() {
@@ -534,21 +549,12 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         return kubernetesClient;
     }
 
-    private Document parseEntityAsXml(Object entity) throws ParserConfigurationException, IOException, SAXException {
-        if (entity instanceof Document) {
-            return (Document) entity;
-        } else if (entity == null) {
+    private Document parseEntityAsXml(String entity) throws ParserConfigurationException, IOException, SAXException {
+        if (entity == null) {
             return null;
         }
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        if (entity instanceof InputStream) {
-            return documentBuilder.parse((InputStream) entity);
-        }
-        if (entity instanceof Reader) {
-            return documentBuilder.parse(new InputSource((Reader) entity));
-        }
-        String xml = entity.toString();
-        return documentBuilder.parse(new ByteArrayInputStream(xml.getBytes()));
+        return documentBuilder.parse(new ByteArrayInputStream(entity.getBytes()));
     }
 
 

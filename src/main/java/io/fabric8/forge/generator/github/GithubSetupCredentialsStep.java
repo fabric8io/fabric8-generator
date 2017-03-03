@@ -49,15 +49,15 @@ public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
 
+        builder.add(gitUserName);
+        builder.add(gitPassword);
+        builder.add(gitEmail);
         GitAccount details = loadGitAccountFromSecret(GitSecretNames.GITHUB_SECRET_NAME);
         if (details != null) {
             setIfNotBlank(gitUserName, details.getUsername());
             setIfNotBlank(gitPassword, details.getPassword());
             setIfNotBlank(gitEmail, details.getEmail());
         }
-        builder.add(gitUserName);
-        builder.add(gitPassword);
-        builder.add(gitEmail);
     }
 
     @Override

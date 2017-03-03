@@ -35,7 +35,7 @@ oc get pod
 
 You can now try out this addon in the Forge CLI as follows:
 
-* build obsidian-generator locally
+==== build obsidian-generator locally
 
 [source,bash]
 ----
@@ -44,7 +44,7 @@ cd obsidian-addon
 mvn install
 ----
 
-* build fabric8-generator locally
+==== build fabric8-generator locally
 
 [source,bash]
 ----
@@ -52,6 +52,8 @@ git clone https://github.com/fabric8io/fabric8-generator.git
 cd fabric8-generator
 mvn install
 ----
+
+==== install the addon into forge
 
 * download the latest http://central.maven.org/maven2/org/jboss/forge/forge-distribution/3.6.0.Alpha2/forge-distribution-3.6.0.Alpha2-offline.zip[distribution JBoss Forge]
 * add the `forge` command to your `$PATH`
@@ -67,6 +69,8 @@ addon-watch-start
 
 * you can now rebuild the addon and forge will reload it on the fly!
 
+==== setup your git account
+
 * setup your git repository credentials in a Secret in kubernetes/openshift (only required once per cluster)
 
 [source,bash]
@@ -74,12 +78,7 @@ addon-watch-start
 fabric8-configure-git-account --git-provider github --git-user-name MYUSER --git-password MY_TOKEN --git-email MY_EMAIL
 ----
 
-* to view local forge logs
-
-[source,bash]
-----
-tail -f ~/.forge/log/forge.log
-----
+==== create a project!
 
 * now to create a project type the following then hit `TAB`
 
@@ -101,4 +100,13 @@ forge --debug
 
 You can then create a `Remote` Debug execution in your IDE to connect to the same debug port that Forge uses (5005 or 8000 etc) and then start debugging!
 
+
+==== viewing logs
+
+To view local forge logs
+
+[source,bash]
+----
+tail -f ~/.forge/log/forge.log
+----
 

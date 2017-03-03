@@ -27,5 +27,7 @@ public class AttributeMapKeys {
     public static final String GIT_URL = "gitUrl";
     public static final String GIT_OWNER_NAME = "gitOwnerName";
     public static final String GIT_REPO_NAME = "gitRepositoryName";
+    public static final String GIT_ORGANISATION = "gitOrganisationName";
+    public static final String GIT_PROVIDER = "gitProvider";
     public static final Class<GitAccount> GIT_ACCOUNT = GitAccount.class;
 }

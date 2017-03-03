@@ -7,6 +7,7 @@
 
 package io.fabric8.forge.generator.git;
 
+import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
@@ -14,6 +15,7 @@ import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
+import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.input.UISelectOne;
@@ -70,19 +72,29 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
         // TODO use git provider based on selection
         addRepoStep(builder);
         builder.add(CreateBuildConfigStep.class);
+        registerAttributes(context.getUIContext());
         return builder.build();
-    }
-
-    protected void addRepoStep(NavigationResultBuilder builder) {
-        GitProvider value = gitProvider.getValue();
-        if (value == null) {
-            throw new IllegalArgumentException("No git providers!");
-        }
-        value.addRepoStep(builder);
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
+        registerAttributes(context.getUIContext());
         return Results.success();
     }
+
+    protected void registerAttributes(UIContext context) {
+        GitProvider provider = gitProvider.getValue();
+        if (provider != null) {
+            context.getAttributeMap().put(AttributeMapKeys.GIT_PROVIDER, provider);
+        }
+    }
+
+    protected void addRepoStep(NavigationResultBuilder builder) {
+        GitProvider provider = gitProvider.getValue();
+        if (provider == null) {
+            throw new IllegalArgumentException("No git providers!");
+        }
+        provider.addRepoStep(builder);
+    }
+
 }

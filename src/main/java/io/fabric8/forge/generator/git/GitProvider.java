@@ -27,6 +27,7 @@ import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,4 +91,6 @@ public abstract class GitProvider {
     public abstract boolean isConfiguredCorrectly();
 
     public abstract void addConfigureStep(NavigationResultBuilder builder);
+
+    public abstract void registerWebHook(GitAccount details, WebHookDetails webhook) throws IOException;
 }

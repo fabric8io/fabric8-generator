@@ -20,6 +20,8 @@ import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitAccount;
+import io.fabric8.forge.generator.git.GitProvider;
+import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.ServiceNames;
@@ -51,7 +53,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
@@ -71,8 +72,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -197,9 +198,17 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         if (Strings.isNullOrBlank(gitRepoName)) {
             return Results.fail("No attribute: " + AttributeMapKeys.GIT_REPO_NAME);
         }
+        String gitOrganisation = (String) attributeMap.get(AttributeMapKeys.GIT_ORGANISATION);
+        if (Strings.isNullOrBlank(gitOrganisation)) {
+            return Results.fail("No attribute: " + AttributeMapKeys.GIT_ORGANISATION);
+        }
         String gitOwnerName = (String) attributeMap.get(AttributeMapKeys.GIT_OWNER_NAME);
         if (Strings.isNullOrBlank(gitOwnerName)) {
             gitOwnerName = details.getUsername();
+        }
+        GitProvider gitProvider = (GitProvider) attributeMap.get(AttributeMapKeys.GIT_PROVIDER);
+        if (gitProvider == null) {
+            return Results.fail("No attribute: " + AttributeMapKeys.GIT_PROVIDER);
         }
 
         KubernetesClient kubernetes = getKubernetesClient();
@@ -227,16 +236,34 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 System.out.println("Using OpenShift token: " + oauthToken);
                 String authHeader = "Bearer " + oauthToken;
 
+                String webhookUrl = URLUtils.pathJoin(jenkinsUrl, "/github-webhook/");
+
+                String repoOrganisation = gitOrganisation;
+                if (Strings.isNullOrBlank(gitOrganisation)) {
+                    repoOrganisation = gitOwnerName;
+                }
+                WebHookDetails webhook = new WebHookDetails(repoOrganisation, gitRepoName, webhookUrl, botSecret);
+
                 try {
                     ensureJenkinsCDCredentialCreated(gitOwnerName, details.tokenOrPassword(), jenkinsUrl, authHeader);
 
                     ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, authHeader, gitOwnerName, gitRepoName);
 
-                    registerGitWebHook(details, jenkinsUrl, gitOwnerName, gitRepoName, botSecret);
+                    registerGitWebHook(details, webhookUrl, gitOwnerName, gitRepoName, botSecret);
                 } catch (Exception e) {
                     LOG.error("Failed: " + e, e);
                     return Results.fail(e.getMessage(), e);
                 }
+
+/*
+                try {
+                    LOG.info("Creating webhook: + " + webhook);
+                    gitProvider.registerWebHook(details, webhook);
+                } catch (Exception e) {
+                    LOG.error("Failed to create webhook: " + webhook + ". " + e, e);
+                    return Results.fail("Failed to create webhook: " + webhook + ". " + e, e);
+                }
+*/
 
                 message += " and CI webhooks";
             } catch (Exception e) {
@@ -247,8 +274,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         return Results.success(message);
     }
 
-    private Response registerGitWebHook(GitAccount details, String jenkinsUrl, String gitOwnerName, String gitRepoName, String botSecret) {
-        String webhookUrl = URLUtils.pathJoin(jenkinsUrl, "/github-webhook/");
+    private void registerGitWebHook(GitAccount details, String webhookUrl, String gitOwnerName, String gitRepoName, String botSecret) throws IOException {
 
         // TODO move this logic into the GitProvider!!!
         String body = "{\"name\": \"web\",\"active\": true,\"events\": [\"*\"],\"config\": {\"url\": \"" + webhookUrl + "\",\"insecure_ssl\":\"1\"," +
@@ -256,6 +282,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
         String authHeader = details.mandatoryAuthHeader();
         String createWebHookUrl = URLUtils.pathJoin("https://api.github.com/repos/", gitOwnerName, gitRepoName, "/hooks");
+/*
         try {
             Client client = createSecureClient();
             return invokeRequestWithRedirectResponse(client, createWebHookUrl,
@@ -264,6 +291,38 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                             post(Entity.json(new ByteArrayInputStream(body.getBytes())), Response.class));
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create the github web hook at: " + createWebHookUrl + ". " + e, e);
+        }
+*/
+
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(createWebHookUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
+            connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+            connection.setRequestProperty("Authorization", authHeader);
+            connection.setDoOutput(true);
+
+            OutputStreamWriter out = new OutputStreamWriter(
+                    connection.getOutputStream());
+            out.write(body);
+
+            out.close();
+            int status = connection.getResponseCode();
+            String message = connection.getResponseMessage();
+            LOG.info("Got response code from Jenkins: " + status + " message: " + message);
+            if (status != 200) {
+                LOG.error("Failed to create the github web hook at: " + createWebHookUrl + ". Status: " + status + " message: " + message);
+                throw new IllegalStateException("Failed to create the github web hook at: " + createWebHookUrl + ". Status: " + status + " message: " + message);
+            }
+        } catch (Exception e) {
+            LOG.error("Failed to create the github web hook at: " + createWebHookUrl + ". " + e, e);
+            throw e;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 

@@ -19,6 +19,7 @@ package io.fabric8.forge.generator.github;
 import io.fabric8.forge.generator.git.EnvironmentVariablePrefixes;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
+import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -169,5 +170,13 @@ public class GitHubFacade {
 
     public boolean isDetailsValid() {
         return details != null && GitAccount.isValid(details);
+    }
+
+    public void createWebHook(WebHookDetails webhook) throws IOException {
+        String orgName = webhook.getOrganisation();
+        String repoName = webhook.getRepositoryName();
+        GHRepository  repository = github.getRepository(orgName + "/" + repoName);
+        repository.createWebHook(webhook.getWebhookURL());
+
     }
 }

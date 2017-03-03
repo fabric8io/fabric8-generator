@@ -1,331 +1,338 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-   <modelVersion>4.0.0</modelVersion>
-   <parent>
-      <groupId>org.jboss</groupId>
-      <artifactId>jboss-parent</artifactId>
-      <version>22</version>
-   </parent>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.jboss</groupId>
+    <artifactId>jboss-parent</artifactId>
+    <version>22</version>
+  </parent>
 
-   <groupId>io.fabric8.forge</groupId>
-   <artifactId>fabric8-generator</artifactId>
-   <version>1.0.0-SNAPSHOT</version>
+  <groupId>io.fabric8.forge</groupId>
+  <artifactId>fabric8-generator</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
 
-   <properties>
-      <fabric8.version>2.2.199</fabric8.version>
+  <properties>
+    <fabric8.version>2.2.199</fabric8.version>
 
-      <version.furnace>2.25.2.Final</version.furnace>
-      <version.forge>3.6.0.Alpha2</version.forge>
-      <version.wildfly-swarm>2017.2.0</version.wildfly-swarm>
-      <fabric8-forge.version>2.3.90</fabric8-forge.version>
-      <version.vertx>1.2.1</version.vertx>
-      <kohsuke.github-api.version>1.84</kohsuke.github-api.version>
-      <infinispan-embedded.version>9.0.0.CR2</infinispan-embedded.version>
+    <version.furnace>2.25.2.Final</version.furnace>
+    <version.forge>3.6.0.Alpha2</version.forge>
+    <version.wildfly-swarm>2017.2.0</version.wildfly-swarm>
+    <fabric8-forge.version>2.3.90</fabric8-forge.version>
+    <version.vertx>1.2.1</version.vertx>
+    <kohsuke.github-api.version>1.84</kohsuke.github-api.version>
+    <infinispan-embedded.version>9.0.0.CR2</infinispan-embedded.version>
+    <obsidian-generator.version>1.0.0.Alpha2_02</obsidian-generator.version>
 
-      <maven.compiler.source>1.8</maven.compiler.source>
-      <maven.compiler.target>1.8</maven.compiler.target>
-      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-   </properties>
-   
-   <scm>
-      <connection>scm:git:git://github.com/fabric8io/fabric8-generator-addon.git</connection>
-      <developerConnection>scm:git:git@github.com:fabric8io/fabric8-generator-addon.git</developerConnection>
-      <url>http://github.com/fabric8io/fabric8-generator-addon</url>
-   </scm>
-   
-   
-   <build>
-      <finalName>fabric8-generator</finalName>
-      <plugins>
-<!--
-         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-               <execution>
-                  <id>flush-archetypes</id>
-                  <phase>prepare-package</phase>
-                  <goals>
-                     <goal>java</goal>
-                  </goals>
-                  <configuration>
-                     <mainClass>org.obsidiantoaster.generator.ui.quickstart.FlushArchetypes</mainClass>
-                     <classpathScope>compile</classpathScope>
-                     <arguments>
-                        <argument>https://repository.jboss.org/nexus/service/local/artifact/maven/redirect?r=public&amp;g=org.obsidiantoaster&amp;a=archetypes-catalog&amp;v=${project.version}&amp;e=xml&amp;c=archetype-catalog</argument>
-                        <argument>${project.build.directory}/classes/org/obsidiantoaster/generator/ui/quickstart</argument>
-                     </arguments>
-                  </configuration>
-               </execution>
-            </executions>
-         </plugin>
--->
-<!--
-         <plugin>
-            <artifactId>maven-release-plugin</artifactId>
-            <configuration>
-               <releaseProfiles>gpg-sign,jboss-release,release</releaseProfiles>
-               <tagNameFormat>@{project.version}</tagNameFormat>
-            </configuration>
-         </plugin>
--->
-<!--
-         <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.3</version>
-            <extensions>true</extensions>
-            <configuration>
-               <autoReleaseAfterClose>true</autoReleaseAfterClose>
-               <serverId>${serverId}</serverId>
-               <nexusUrl>${nexusUrl}</nexusUrl>
-               <skipStaging>${skipStaging}</skipStaging>
-            </configuration>
-         </plugin>
--->
-         <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
-            <executions>
-               <execution>
-                  <id>create-forge-addon</id>
-                  <phase>package</phase>
-                  <goals>
-                     <goal>jar</goal>
-                  </goals>
-                  <configuration>
-                     <classifier>forge-addon</classifier>
-                  </configuration>
-               </execution>
-            </executions>
-         </plugin>
-      </plugins>
-   </build>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 
-   <dependencyManagement>
-      <dependencies>
-         <dependency>
-           <groupId>io.fabric8</groupId>
-           <artifactId>fabric8-project</artifactId>
-           <version>${fabric8.version}</version>
-           <type>pom</type>
-           <scope>import</scope>
-         </dependency>
-         <dependency>
-            <groupId>org.jboss.forge</groupId>
-            <artifactId>forge-bom</artifactId>
-            <version>${version.forge}</version>
-            <type>pom</type>
-            <scope>import</scope>
-         </dependency>
-      </dependencies>
-   </dependencyManagement>
-   
-   <dependencies>
-      <dependency>
-         <groupId>org.kohsuke</groupId>
-         <artifactId>github-api</artifactId>
-         <version>${kohsuke.github-api.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.infinispan</groupId>
-         <artifactId>infinispan-embedded</artifactId>
-         <version>${infinispan-embedded.version}</version>
-      </dependency>
-
-      <dependency>
-          <groupId>org.obsidiantoaster.forge</groupId>
-          <artifactId>obsidian-generator</artifactId>
-          <classifier>forge-addon</classifier>
-          <version>1.0.0-SNAPSHOT</version>
-         <exclusions>
-            <exclusion>
-               <groupId>io.fabric8.forge.devops</groupId>
-               <artifactId>*</artifactId>
-            </exclusion>
-         </exclusions>
-      </dependency>
-
-      <!-- 3rd Party addons -->
-      <!-- Spring Boot -->
-<!--
-      <dependency>
-         <groupId>io.fabric8.forge</groupId>
-         <artifactId>devops</artifactId>
-         <classifier>forge-addon</classifier>
-         <version>${fabric8-forge.version}</version>
-      </dependency>
--->
-
-      <dependency>
-        <groupId>io.fabric8.forge</groupId>
-        <artifactId>utils</artifactId>
-        <version>${fabric8-forge.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.fabric8</groupId>
-        <artifactId>kubernetes-api</artifactId>
-        <exclusions>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      
-      <dependency>
-         <!-- TODO we should be able to remove this dependency -->
-         <groupId>io.fabric8</groupId>
-         <artifactId>fabric8-devops</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>io.fabric8</groupId>
-         <artifactId>fabric8-project-utils</artifactId>
-         <exclusions>
-            <exclusion>
-               <groupId>io.fabric8</groupId>
-               <artifactId>gitrepo-api</artifactId>
-            </exclusion>
-         </exclusions>
-      </dependency>
-      <dependency>
-         <groupId>io.fabric8</groupId>
-         <artifactId>gitrepo-resteasy</artifactId>
-         <exclusions>
-            <exclusion>
-               <groupId>org.jboss.resteasy</groupId>
-               <artifactId>*</artifactId>
-            </exclusion>
-         </exclusions>
-      </dependency>
-
-      <dependency>
-          <groupId>com.auth0</groupId>
-          <artifactId>java-jwt</artifactId>
-          <version>3.1.0</version>
-      </dependency>
-
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>rest-client</artifactId>
-         <classifier>forge-addon</classifier>
-      </dependency>
-
-<!--
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>slf4j</artifactId>
-         <classifier>forge-addon</classifier>
-      </dependency>
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>maven</artifactId>
-         <classifier>javaee-api</classifier>
-         <classifier>forge-addon</classifier>
-      </dependency>
--->
-
-      <dependency>
-         <groupId>me.escoffier.forge</groupId>
-         <artifactId>vertx-forge-addon</artifactId>
-         <classifier>forge-addon</classifier>
-         <version>${version.vertx}</version>
-      </dependency>
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>wildfly-swarm</artifactId>
-         <classifier>forge-addon</classifier>
-         <version>${version.wildfly-swarm}</version>
-      </dependency>
-
-      <dependency>
-         <groupId>org.jboss.forge.furnace.container</groupId>
-         <artifactId>cdi</artifactId>
-         <classifier>forge-addon</classifier>
-         <scope>provided</scope>
-      </dependency>
-
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>ui</artifactId>
-         <classifier>forge-addon</classifier>
-      </dependency>
-
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>projects</artifactId>
-         <classifier>forge-addon</classifier>
-      </dependency>
-
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>maven</artifactId>
-         <classifier>forge-addon</classifier>
-      </dependency>
-
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>maven-impl-projects</artifactId>
-         <version>${version.forge}</version>
-         <scope>provided</scope>
-      </dependency>
+  <scm>
+    <connection>scm:git:git://github.com/fabric8io/fabric8-generator-addon.git</connection>
+    <developerConnection>scm:git:git@github.com:fabric8io/fabric8-generator-addon.git</developerConnection>
+    <url>http://github.com/fabric8io/fabric8-generator-addon</url>
+  </scm>
 
 
-      <dependency>
-         <groupId>org.jboss.forge.addon</groupId>
-         <artifactId>templates</artifactId>
-         <classifier>forge-addon</classifier>
-      </dependency>
-
-      <dependency>
-         <groupId>org.jboss.forge.furnace.test</groupId>
-         <artifactId>furnace-test-harness</artifactId>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.jboss.forge.furnace.test</groupId>
-         <artifactId>arquillian-furnace-classpath</artifactId>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.jglue.cdi-unit</groupId>
-         <artifactId>cdi-unit</artifactId>
-         <version>3.0.0</version>
-         <scope>test</scope>
-      </dependency>
-   </dependencies>
-
-   <profiles>
-      <profile>
-         <id>release</id>
-         <activation />
-         <build>
-            <plugins>
+  <build>
+    <finalName>fabric8-generator</finalName>
+    <plugins>
+      <!--
                <plugin>
-                  <groupId>org.jboss.forge.furnace</groupId>
-                  <artifactId>furnace-maven-plugin</artifactId>
-                  <version>${version.furnace}</version>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>exec-maven-plugin</artifactId>
                   <executions>
                      <execution>
-                        <id>generate-dot</id>
+                        <id>flush-archetypes</id>
                         <phase>prepare-package</phase>
                         <goals>
-                           <goal>generate-dot</goal>
+                           <goal>java</goal>
                         </goals>
                         <configuration>
-                           <attach>true</attach>
+                           <mainClass>org.obsidiantoaster.generator.ui.quickstart.FlushArchetypes</mainClass>
+                           <classpathScope>compile</classpathScope>
+                           <arguments>
+                              <argument>https://repository.jboss.org/nexus/service/local/artifact/maven/redirect?r=public&amp;g=org.obsidiantoaster&amp;a=archetypes-catalog&amp;v=${project.version}&amp;e=xml&amp;c=archetype-catalog</argument>
+                              <argument>${project.build.directory}/classes/org/obsidiantoaster/generator/ui/quickstart</argument>
+                           </arguments>
                         </configuration>
                      </execution>
                   </executions>
                </plugin>
-            </plugins>
-         </build>
-      </profile>
-   </profiles>
+      -->
+      <!--
+               <plugin>
+                  <artifactId>maven-release-plugin</artifactId>
+                  <configuration>
+                     <releaseProfiles>gpg-sign,jboss-release,release</releaseProfiles>
+                     <tagNameFormat>@{project.version}</tagNameFormat>
+                  </configuration>
+               </plugin>
+      -->
+      <!--
+               <plugin>
+                  <groupId>org.sonatype.plugins</groupId>
+                  <artifactId>nexus-staging-maven-plugin</artifactId>
+                  <version>1.6.3</version>
+                  <extensions>true</extensions>
+                  <configuration>
+                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                     <serverId>${serverId}</serverId>
+                     <nexusUrl>${nexusUrl}</nexusUrl>
+                     <skipStaging>${skipStaging}</skipStaging>
+                  </configuration>
+               </plugin>
+      -->
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>create-forge-addon</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>forge-addon</classifier>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.fabric8</groupId>
+        <artifactId>fabric8-project</artifactId>
+        <version>${fabric8.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.forge</groupId>
+        <artifactId>forge-bom</artifactId>
+        <version>${version.forge}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.kohsuke</groupId>
+      <artifactId>github-api</artifactId>
+      <version>${kohsuke.github-api.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-embedded</artifactId>
+      <version>${infinispan-embedded.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.obsidiantoaster.forge</groupId>
+      <artifactId>obsidian-generator</artifactId>
+      <classifier>forge-addon</classifier>
+      <version>${obsidian-generator.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.fabric8.forge.devops</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- 3rd Party addons -->
+    <!-- Spring Boot -->
+    <!--
+          <dependency>
+             <groupId>io.fabric8.forge</groupId>
+             <artifactId>devops</artifactId>
+             <classifier>forge-addon</classifier>
+             <version>${fabric8-forge.version}</version>
+          </dependency>
+    -->
+
+    <dependency>
+      <groupId>io.fabric8.forge</groupId>
+      <artifactId>utils</artifactId>
+      <version>${fabric8-forge.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>kubernetes-api</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>jul-to-slf4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+
+    <dependency>
+      <!-- TODO we should be able to remove this dependency -->
+      <groupId>io.fabric8</groupId>
+      <artifactId>fabric8-devops</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>fabric8-project-utils</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>io.fabric8</groupId>
+          <artifactId>gitrepo-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>gitrepo-resteasy</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.jboss.resteasy</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>java-jwt</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.forge.addon</groupId>
+      <artifactId>rest-client</artifactId>
+      <classifier>forge-addon</classifier>
+    </dependency>
+
+    <!--
+          <dependency>
+             <groupId>org.jboss.forge.addon</groupId>
+             <artifactId>slf4j</artifactId>
+             <classifier>forge-addon</classifier>
+          </dependency>
+          <dependency>
+             <groupId>org.jboss.forge.addon</groupId>
+             <artifactId>maven</artifactId>
+             <classifier>javaee-api</classifier>
+             <classifier>forge-addon</classifier>
+          </dependency>
+    -->
+
+    <dependency>
+      <groupId>me.escoffier.forge</groupId>
+      <artifactId>vertx-forge-addon</artifactId>
+      <classifier>forge-addon</classifier>
+      <version>${version.vertx}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.forge.addon</groupId>
+      <artifactId>wildfly-swarm</artifactId>
+      <classifier>forge-addon</classifier>
+      <version>${version.wildfly-swarm}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.forge.furnace.container</groupId>
+      <artifactId>cdi</artifactId>
+      <classifier>forge-addon</classifier>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.forge.addon</groupId>
+      <artifactId>ui</artifactId>
+      <classifier>forge-addon</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.forge.addon</groupId>
+      <artifactId>projects</artifactId>
+      <classifier>forge-addon</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.forge.addon</groupId>
+      <artifactId>maven</artifactId>
+      <classifier>forge-addon</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.forge.addon</groupId>
+      <artifactId>maven-impl-projects</artifactId>
+      <version>${version.forge}</version>
+      <scope>provided</scope>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.jboss.forge.addon</groupId>
+      <artifactId>templates</artifactId>
+      <classifier>forge-addon</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.forge.furnace.test</groupId>
+      <artifactId>furnace-test-harness</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.forge.furnace.test</groupId>
+      <artifactId>arquillian-furnace-classpath</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jglue.cdi-unit</groupId>
+      <artifactId>cdi-unit</artifactId>
+      <version>3.0.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <profiles>
+    <profile>
+      <id>release</id>
+      <activation/>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jboss.forge.furnace</groupId>
+            <artifactId>furnace-maven-plugin</artifactId>
+            <version>${version.furnace}</version>
+            <executions>
+              <execution>
+                <id>generate-dot</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>generate-dot</goal>
+                </goals>
+                <configuration>
+                  <attach>true</attach>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>snapshot</id>
+      <properties>
+        <obsidian-generator.version>1.0.0-SNAPSHOT</obsidian-generator.version>
+      </properties>
+    </profile>
+  </profiles>
 </project>

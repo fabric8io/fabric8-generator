@@ -35,15 +35,6 @@ oc get pod
 
 You can now try out this addon in the Forge CLI as follows:
 
-==== build obsidian-generator locally
-
-[source,bash]
-----
-git clone https://github.com/obsidian-toaster/obsidian-addon.git
-cd obsidian-addon
-mvn install
-----
-
 ==== build fabric8-generator locally
 
 [source,bash]
@@ -109,4 +100,22 @@ To view local forge logs
 ----
 tail -f ~/.forge/log/forge.log
 ----
+
+
+==== build obsidian-generator locally
+
+[source,bash]
+----
+git clone https://github.com/obsidian-toaster/obsidian-addon.git
+cd obsidian-addon
+mvn install
+----
+
+Then you can use it in the `fabric8-generator` via:
+
+[source,bash]
+----
+mvn install -Psnapshot
+----
+
 

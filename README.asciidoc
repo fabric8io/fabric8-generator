@@ -88,5 +88,17 @@ tail -f ~/.forge/log/forge.log
 obsidian-new-quickstart --named demo131 --git-repository demo131  --type [org.obsidiantoaster.quickstarts:rest_springboot-tomcat-arc
 ----
 
-Then hit return!
+Then hit return and enjoy the ride!!!
+
+=== Debugging
+
+To debug your local build of the forge addons exit forge then re-run it via:
+
+[source,bash]
+----
+forge --debug
+----
+
+You can then create a `Remote` Debug execution in your IDE to connect to the same debug port that Forge uses (5005 or 8000 etc) and then start debugging!
+
 

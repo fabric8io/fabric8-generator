@@ -118,10 +118,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         if (oldPattern.isEmpty()) {
             return repoName;
         }
-        if (oldPattern.startsWith("(") && oldPattern.endsWith(")")) {
-            return oldPattern.substring(0, oldPattern.length() - 1) + "|" + repoName + ")";
-        }
-        return "(" + oldPattern + "|" + repoName + ")";
+        return oldPattern + "|" + repoName;
     }
 
     public void initializeUI(final UIBuilder builder) throws Exception {
@@ -230,7 +227,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 String authHeader = "Bearer " + oauthToken;
 
                 try {
-                    ensureJenkinsCDCredentialCreated(details, jenkinsUrl, authHeader);
+                    ensureJenkinsCDCredentialCreated(gitOwnerName, details.tokenOrPassword(), jenkinsUrl, authHeader);
 
                     ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, authHeader, gitOwnerName, gitRepoName);
 
@@ -295,9 +292,11 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         return null;
     }
 
-    private Response ensureJenkinsCDCredentialCreated(GitAccount details, String jenkinsUrl, String authHeader) {
+    private Response ensureJenkinsCDCredentialCreated(String gitUserName, String gitToken, String jenkinsUrl, String authHeader) {
         String answer = null;
 
+        LOG.info("Creating Jenkins fabric8 credentials for github user name: " + gitUserName);
+        
         //String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/createCredentials");
         String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/");
         /*
@@ -322,8 +321,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                     "  \"credentials\": {\n" +
                     "    \"scope\": \"GLOBAL\",\n" +
                     "    \"id\": \"fabric8\",\n" +
-                    "    \"username\": \"" + details.getUsername() + "\",\n" +
-                    "    \"password\": \"" + details.tokenOrPassword() + "\",\n" +
+                    "    \"username\": \"" + gitUserName + "\",\n" +
+                    "    \"password\": \"" + gitToken + "\",\n" +
                     "    \"description\": \"fabric8\",\n" +
                     "    \"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\"\n" +
                     "  }\n" +

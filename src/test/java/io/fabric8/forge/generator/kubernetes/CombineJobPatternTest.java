@@ -32,8 +32,8 @@ public class CombineJobPatternTest {
     public void testCombineJobPatterns() throws Exception {
         assertJobPatternCombines("", "foo", "foo");
         assertJobPatternCombines("   ", "foo", "foo");
-        assertJobPatternCombines("(bar)", "foo", "(bar|foo)");
-        assertJobPatternCombines("(bar|whatnot)", "foo", "(bar|whatnot|foo)");
+        assertJobPatternCombines("bar", "foo", "bar|foo");
+        assertJobPatternCombines("bar|whatnot", "foo", "bar|whatnot|foo");
     }
 
     private void assertJobPatternCombines(String currentValue, String repoName, String expected) {

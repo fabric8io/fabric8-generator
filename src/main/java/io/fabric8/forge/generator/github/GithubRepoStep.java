@@ -88,12 +88,17 @@ public class GithubRepoStep extends AbstractGitRepoStep implements UIWizardStep 
             }
         }
         String projectName = getProjectName(builder.getUIContext());
-        gitRepository.setDefaultValue(projectName);
         if (organisations.size() > 1) {
             builder.add(gitOrganisation);
         }
         builder.add(gitRepository);
         builder.add(gitRepoDescription);
+
+
+        if (gitRepository.getValue() == null) {
+            LOG.info("Setting defaultValue of gitRepository to " + projectName + " as current value is null!");
+            gitRepository.setDefaultValue(projectName);
+        }
     }
 
     private GitHubFacade createGithubFacade(UIContext context) {

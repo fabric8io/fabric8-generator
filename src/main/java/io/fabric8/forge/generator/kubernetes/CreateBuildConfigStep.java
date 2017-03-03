@@ -224,6 +224,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 botSecret = "secret101";
 
                 String oauthToken = kubernetes.getConfiguration().getOauthToken();
+                System.out.println("Using OpenShift token: " + oauthToken);
                 String authHeader = "Bearer " + oauthToken;
 
                 try {

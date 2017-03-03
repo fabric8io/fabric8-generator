@@ -22,3 +22,71 @@ This Addon needs to be installed in the local maven repository before used in th
 ----
     mvn clean install 
 ----
+
+
+== Testing in development
+
+First make sure you have connected to an OpenShift cluster so that you can do things like
+
+[source,bash]
+----
+oc get pod
+----
+
+You can now try out this addon in the Forge CLI as follows:
+
+* build obsidian-generator locally
+
+[source,bash]
+----
+git clone https://github.com/obsidian-toaster/obsidian-addon.git
+cd obsidian-addon
+mvn install
+----
+
+* build fabric8-generator locally
+
+[source,bash]
+----
+git clone https://github.com/fabric8io/fabric8-generator.git
+cd fabric8-generator
+mvn install
+----
+
+* download the latest http://central.maven.org/maven2/org/jboss/forge/forge-distribution/3.6.0.Alpha2/forge-distribution-3.6.0.Alpha2-offline.zip[distribution JBoss Forge]
+* add the `forge` command to your `$PATH`
+* you could trash your `~/.forge` folder to remove any old addons
+* install the addon into forge via:
+
+[source,bash]
+----
+forge
+addon-install --coordinate io.fabric8.forge:fabric8-generator,1.0.0-SNAPSHOT
+addon-watch-start
+----
+
+* you can now rebuild the addon and forge will reload it on the fly!
+
+* setup your git repository credentials in a Secret in kubernetes/openshift (only required once per cluster)
+
+[source,bash]
+----
+fabric8-configure-git-account --git-provider github --git-user-name MYUSER --git-password MY_TOKEN --git-email MY_EMAIL
+----
+
+* to view local forge logs
+
+[source,bash]
+----
+tail -f ~/.forge/log/forge.log
+----
+
+* now to create a project type the following then hit `TAB`
+
+[source,bash]
+----
+obsidian-new-quickstart --named demo131 --git-repository demo131  --type [org.obsidiantoaster.quickstarts:rest_springboot-tomcat-arc
+----
+
+Then hit return!
+

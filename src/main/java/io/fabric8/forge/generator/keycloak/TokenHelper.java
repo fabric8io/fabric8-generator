@@ -38,10 +38,9 @@ public class TokenHelper {
         return authToken;
     }
 
-    public static String getMandatoryAuthTokenFor(UIContext context, KeycloakEndpoint getGithubToken) {
-        String authHeader = getMandatoryAuthHeader(context);
+    public static String getMandatoryTokenFor(KeycloakEndpoint endpoint, String authHeader) {
         KeycloakClient client = new KeycloakClient();
-        String gitHubToken = client.getGitHubToken(authHeader);
+        String gitHubToken = client.getTokenFor(endpoint, authHeader);
         if (Strings.isNullOrBlank(gitHubToken)) {
             throw new WebApplicationException("No github auth token available!", Response.Status.UNAUTHORIZED);
         }

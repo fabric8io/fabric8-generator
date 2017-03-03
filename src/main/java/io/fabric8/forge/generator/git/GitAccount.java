@@ -16,6 +16,9 @@
  */
 package io.fabric8.forge.generator.git;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.Claim;
 import io.fabric8.forge.generator.keycloak.KeycloakEndpoint;
 import io.fabric8.forge.generator.keycloak.TokenHelper;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
@@ -32,9 +35,11 @@ import org.jboss.forge.addon.ui.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static io.fabric8.forge.generator.pipeline.JenkinsPipelineLibrary.getSystemPropertyOrDefault;
 
@@ -57,8 +62,33 @@ public class GitAccount {
     }
 
     public static GitAccount loadFromSaaS(UIContext context) {
-        String authToken = TokenHelper.getMandatoryAuthTokenFor(context, KeycloakEndpoint.GET_GITHUB_TOKEN);
-        return new GitAccount(null, authToken, null, null);
+
+        String authHeader = TokenHelper.getMandatoryAuthHeader(context);
+        String jwtToken = authHeader;
+        int idx = authHeader.indexOf(' ');
+        jwtToken = jwtToken.substring(idx + 1, jwtToken.length());
+        JWT jwt = null;
+        try {
+            jwt = JWT.decode(jwtToken);
+        } catch (JWTDecodeException e) {
+            throw new WebApplicationException("Failed to parse JWT " + e, e);
+        }
+        String authToken = TokenHelper.getMandatoryTokenFor(KeycloakEndpoint.GET_GITHUB_TOKEN, authHeader);
+        Map<String, Claim> claims = jwt.getClaims();
+        String username = getClaim(claims, "preferred_username");
+        String email = getClaim(claims, "email");
+        LOG.info("Loading git account from saas: username: " + username + " email: " + email);
+        return new GitAccount(username, authToken, null, email);
+    }
+
+    private static String getClaim(Map<String, Claim> claims, String key) {
+        if (claims != null) {
+            Claim claim = claims.get(key);
+            if (claim != null) {
+                return claim.asString();
+            }
+        }
+        return null;
     }
 
     /**
@@ -156,7 +186,7 @@ public class GitAccount {
 
     @Override
     public String toString() {
-        return "GitHubDetails{" +
+        return "GitAccount{" +
                 "username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 '}';

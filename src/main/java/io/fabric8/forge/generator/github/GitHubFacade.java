@@ -140,7 +140,11 @@ public class GitHubFacade {
     }
 
     public UserDetails createUserDetails(String gitUrl) {
-        return new UserDetails(gitUrl, gitUrl, details.getUsername(), details.getPassword(), details.getEmail());
+        String password = details.getPassword();
+        if (Strings.isNullOrBlank(password)) {
+            password = details.getToken();
+        }
+        return new UserDetails(gitUrl, gitUrl, details.getUsername(), password, details.getEmail());
     }
 
     public GitAccount getDetails() {

@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
 import java.util.Map;
 
 /**
@@ -33,14 +32,14 @@ public class KeycloakClient {
     private static final String SCOPE = "scope";
 
     public String getOpenShiftToken(String authHeader) {
-        return getToken(KeycloakEndpoint.GET_OPENSHIFT_TOKEN, authHeader);
+        return getTokenFor(KeycloakEndpoint.GET_OPENSHIFT_TOKEN, authHeader);
     }
 
     public String getGitHubToken(String authHeader) {
-        return getToken(KeycloakEndpoint.GET_GITHUB_TOKEN, authHeader);
+        return getTokenFor(KeycloakEndpoint.GET_GITHUB_TOKEN, authHeader);
     }
 
-    private String getToken(KeycloakEndpoint endpoint, String authHeader) {
+    public String getTokenFor(KeycloakEndpoint endpoint, String authHeader) {
         // access_token=token&scope=scope
         String responseBody = getResponseBody(endpoint, authHeader);
         Map<String, String> parameter = UrlHelper.splitQuery(responseBody);
@@ -54,7 +53,8 @@ public class KeycloakClient {
     private String getResponseBody(KeycloakEndpoint endpoint, String authHeader) {
         Client client = ClientBuilder.newClient();
         return client.target(endpoint.toString())
-                .request(MediaType.APPLICATION_JSON)
+                //.request(MediaType.APPLICATION_JSON)
+                .request("application/jwt")
                 .header("Authorization", authHeader)
                 .get(String.class);
 

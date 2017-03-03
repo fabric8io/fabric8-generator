@@ -34,6 +34,7 @@ import org.jboss.forge.addon.ui.util.Metadata;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static io.fabric8.forge.addon.utils.OutputFormatHelper.toJson;
 
@@ -78,14 +79,16 @@ public class CheckGitAccounts implements UICommand {
                 validServices.add(gitService.getName());
             }
         }
-        return Results.success(formatResult(validServices));
+        return Results.success(formatResult(uiExecutionContext, validServices));
     }
 
 
-    protected String formatResult(List<String> result) throws JsonProcessingException {
+    protected String formatResult(UIExecutionContext uiExecutionContext, List<String> result) throws JsonProcessingException {
+        Map<Object, Object> attributeMap = uiExecutionContext.getUIContext().getAttributeMap();
         OutputFormat outputFormat = format.getValue();
         switch (outputFormat) {
             case JSON:
+                attributeMap.put("org.jboss.forge.ui.Results.ENTITY", result);
                 return toJson(result);
             default:
                 return "git providers: " + String.join(", ", result);

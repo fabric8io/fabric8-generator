@@ -20,8 +20,10 @@ import io.fabric8.forge.generator.EnvironmentVariables;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.extensions.Configs;
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.User;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
@@ -100,5 +102,45 @@ public class KubernetesClientHelper {
             return namespace;
         }
         return KubernetesHelper.defaultNamespace();
+    }
+
+    /**
+     * Validates that the namespace exists and if not tries to create it
+     */
+    public static void lazyCreateNamespace(KubernetesClient kubernetesClient, String namespace) {
+        OpenShiftClient openShiftClient = getOpenShiftClientOrNull(kubernetesClient);
+        if (openShiftClient != null) {
+            Project project = null;
+            try {
+                project = openShiftClient.projects().withName(namespace).get();
+            } catch (Exception e) {
+                LOG.info("Caught exception looking up project " + namespace + ". " + e, e);
+            }
+            if (project != null) {
+                return;
+            }
+            try {
+                LOG.info("Creating project " + namespace);
+                openShiftClient.projectrequests().createNew().withNewMetadata().withName(namespace).endMetadata().done();
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to create project " + namespace + " due to: " + e, e);
+            }
+        } else {
+            Namespace resource = null;
+            try {
+                resource = kubernetesClient.namespaces().withName(namespace).get();
+            } catch (Exception e) {
+                LOG.info("Caught exception looking up namespace " + namespace + ". " + e, e);
+            }
+            if (resource != null) {
+                return;
+            }
+            try {
+                LOG.info("Creating namespace " + namespace);
+                kubernetesClient.namespaces().createNew().withNewMetadata().withName(namespace).endMetadata().done();
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to create namespace " + namespace + " due to: " + e, e);
+            }
+        }
     }
 }

@@ -113,6 +113,7 @@ public class GitAccount {
 
     public static GitAccount loadFromSecret(KubernetesClient kubernetesClient, String namespace, String secretName) {
         LOG.info("Loading git secret from namespace " + namespace + " with name: " + secretName);
+        KubernetesClientHelper.lazyCreateNamespace(kubernetesClient, namespace);
         Secret secret = kubernetesClient.secrets().inNamespace(namespace).withName(secretName).get();
         if (secret != null) {
             Map<String, String> data = secret.getData();
@@ -137,6 +138,7 @@ public class GitAccount {
     public static Result storeGitDetailsInSecret(KubernetesClient kubernetesClient, String namespace, String secretName, GitAccount details) {
         boolean update = true;
         LOG.info("Storing git account into namespace " + namespace + " with name " + secretName);
+        KubernetesClientHelper.lazyCreateNamespace(kubernetesClient, namespace);
         ClientResource<Secret, DoneableSecret> resource = kubernetesClient.secrets().inNamespace(namespace)
                 .withName(secretName);
         Secret secret = resource.get();

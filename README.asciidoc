@@ -83,7 +83,7 @@ fabric8-configure-git-account --git-provider github --git-user-name MYUSER --git
 
 [source,bash]
 ----
-obsidian-new-quickstart --named demo131 --type [org.obsidiantoaster.quickstarts:rest_springboot-tomcat-arc
+obsidian-new-quickstart --named demo131 --type rest_springboot-tomcat
 ----
 
 Then hit return and enjoy the ride!!!

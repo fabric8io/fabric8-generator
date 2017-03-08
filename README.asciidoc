@@ -71,11 +71,19 @@ fabric8-configure-git-account --git-provider github --git-user-name MYUSER --git
 
 ==== create a project!
 
+* if you are not running a jenkins service in your current openshift namespace you will need to disable the CI part by adding the following argument when you create a project:
+
+
+[source,bash]
+----
+  --add-ci-web-hooks false
+----
+
 * now to create a project type the following then hit `TAB`
 
 [source,bash]
 ----
-obsidian-new-quickstart --named demo131 --git-repository demo131  --type [org.obsidiantoaster.quickstarts:rest_springboot-tomcat-arc
+obsidian-new-quickstart --named demo131 --type [org.obsidiantoaster.quickstarts:rest_springboot-tomcat-arc
 ----
 
 Then hit return and enjoy the ride!!!

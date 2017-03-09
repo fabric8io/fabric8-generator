@@ -58,12 +58,7 @@ import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.RedirectionException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
@@ -82,14 +77,12 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 import static io.fabric8.forge.generator.kubernetes.Base64Helper.base64decode;
@@ -213,12 +206,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 gitRepoNameList.add(gitRepoName);
             }
         }
-/*
-        String gitOrganisation = (String) attributeMap.get(AttributeMapKeys.GIT_ORGANISATION);
-        if (Strings.isNullOrBlank(gitOrganisation)) {
-            return Results.fail("No attribute: " + AttributeMapKeys.GIT_ORGANISATION);
-        }
-*/
         String gitOwnerName = (String) attributeMap.get(AttributeMapKeys.GIT_OWNER_NAME);
         if (Strings.isNullOrBlank(gitOwnerName)) {
             gitOwnerName = details.getUsername();
@@ -291,20 +278,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
         String authHeader = details.mandatoryAuthHeader();
         String createWebHookUrl = URLUtils.pathJoin("https://api.github.com/repos/", gitOwnerName, gitRepoName, "/hooks");
-/*
-        TODO JAX-RS doesn't work so lets use trusty java.net.URL instead ;)
-        
-        try {
-            Client client = createSecureClient();
-            return invokeRequestWithRedirectResponse(client, createWebHookUrl,
-                    target -> target.request(MediaType.APPLICATION_JSON).
-                            header("Authorization", authHeader).
-                            post(Entity.json(new ByteArrayInputStream(body.getBytes())), Response.class));
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to create the github web hook at: " + createWebHookUrl + ". " + e, e);
-        }
-*/
 
+        // JAX-RS doesn't work so lets use trusty java.net.URL instead ;)
         HttpURLConnection connection = null;
         try {
             URL url = new URL(createWebHookUrl);
@@ -367,7 +342,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
      * Triggers the given jenkins job via its URL.
      *
      * @param authHeader
-     * @param jobUrl the URL to the jenkins job
+     * @param jobUrl     the URL to the jenkins job
      * @param triggerUrl can be null or empty and the default triggerUrl will be used
      */
     protected void triggerJenkinsWebHook(String token, String authHeader, String jobUrl, String triggerUrl, boolean post) {
@@ -450,34 +425,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             client.close();
         }
         return null;
-/*
-        HttpURLConnection connection = null;
-        String message = null;
-        try {
-            URL url = new URL(urlText);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Authorization", authHeader);
-
-            int status = connection.getResponseCode();
-            message = connection.getResponseMessage();
-            LOG.info("Got response code from URL: " + url + " " + status + " message: " + message);
-            if (status != 200 || Strings.isNullOrBlank(message)) {
-                LOG.debug("Failed to load URL " + url + ". Status: " + status + " message: " + message);
-            } else {
-                ObjectMapper objectMapper = new ObjectMapper();
-                return objectMapper.reader().readTree(message);
-            }
-        } catch (Exception e) {
-            LOG.debug("Failed to load URL " + urlText + ". " + e, e);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-
-        return null;*/
     }
 
     private Response ensureJenkinsCDCredentialCreated(String gitUserName, String gitToken, String jenkinsUrl, String authHeader) {
@@ -563,13 +510,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
 
         setGithubOrgJobOwnerAndRepo(document, gitOwnerName, gitRepoName);
-/*
-        try {
-            LOG.info("Generating XML: " + DomHelper.toXml(document));
-        } catch (TransformerException e) {
-            // ignore
-        }
-*/
+
         final Entity entity = Entity.entity(document, MediaType.TEXT_XML);
         Response answer;
         if (create) {
@@ -583,7 +524,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
         } else {
             try {
-                answer =  invokeRequestWithRedirectResponse(getUrl,
+                answer = invokeRequestWithRedirectResponse(getUrl,
                         target -> target.request(MediaType.TEXT_XML).
                                 header("Authorization", authHeader).
                                 post(entity, Response.class));
@@ -595,15 +536,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         LOG.info("Triggering the job " + jobUrl);
         try {
             triggerJenkinsWebHook(oauthToken, authHeader, jobUrl, triggerUrl, true);
-/*
-            invokeWithDisabledTrustManager(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    triggerJenkinsWebHook(oauthToken, authHeader, jobUrl, triggerUrl, true);
-                    return null;
-                }
-            });
-*/
         } catch (Exception e) {
             LOG.error("Failed to trigger jenkins job at " + triggerUrl + ". " + e, e);
         }
@@ -620,10 +552,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         Element pattern = mandatoryFirstChild(githubNavigator, "pattern");
 
         String newPattern = combineJobPattern(pattern.getTextContent(), gitRepoName);
-        boolean updated = setElementText(repoOwner, gitOwnerName);
-        if (setElementText(pattern, newPattern)) {
-            updated = true;
-        }
+        setElementText(repoOwner, gitOwnerName);
+        setElementText(pattern, newPattern);
     }
 
     protected Element getGithubScmNavigatorElement(Document doc) {
@@ -641,41 +571,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
         }
         return githubNavigator;
-    }
-
-    public static <T> T invokeWithDisabledTrustManager(Callable<T> callback) throws Exception {
-        SSLSocketFactory defaultSSLSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
-        HostnameVerifier defaultHostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
-        try {
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                    return null;
-                }
-
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
-            }
-            };
-
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            HostnameVerifier allHostsValid = new HostnameVerifier() {
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                }
-            };
-
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-
-            return callback.call();
-        } finally {
-            HttpsURLConnection.setDefaultHostnameVerifier(defaultHostnameVerifier);
-            HttpsURLConnection.setDefaultSSLSocketFactory(defaultSSLSocketFactory);
-        }
     }
 
     protected Response invokeRequestWithRedirectResponse(String url, Function<WebTarget, Response> callback) {
@@ -740,22 +635,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 return true;
             }
         });
-/*
-        Configuration configuration = new ClientConfiguration();
-        Client client = ClientBuilder.newClient(configuration);
-
-        // lets disable SSL cert issues:
-        HTTPConduit conduit = WebClient.getConfig(client).getHttpConduit();
-
-        TLSClientParameters params = conduit.getTlsClientParameters();
-
-        if (params == null) {
-            params = new TLSClientParameters();
-            conduit.setTlsClientParameters(params);
-        }
-        params.setTrustManagers(new TrustManager[]{new TrustEverythingSSLTrustManager()});
-        params.setDisableCNCheck(true);
-*/
         return clientBuilder.build();
     }
 

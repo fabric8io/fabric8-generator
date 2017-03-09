@@ -23,6 +23,7 @@ public class CacheNames {
 
     public static final String GITHUB_ACCOUNT_FROM_SECRET = "github-account-from-secret";
     public static final String GITHUB_ORGANISATIONS = "github-organisations";
+    public static final String GITHUB_REPOSITORIES_FOR_ORGANISATION = "github-repositories-for-organisation";
 
     public static final String GOGS_ACCOUNT_FROM_SECRET = "gogs-account-from-secret";
     public static final String GOGS_ORGANISATIONS = "gogs-organisations";

@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -139,6 +140,20 @@ public class GitHubFacade {
             }
         }
     }
+    
+    public Collection<String> getRespositoriesForOrganisation(String orgName) {
+        Set<String> answer = new TreeSet<>();
+        GitHub github = this.github;
+        if (github != null) {
+            try {
+                Map<String, GHRepository> repositories = github.getOrganization(orgName).getRepositories();
+                answer.addAll(repositories.keySet());
+            } catch (IOException e) {
+                LOG.warn("Caught exception looking up github repositories for " + orgName + ". " + e, e);
+            }
+        }
+        return answer;
+    }
 
     public UserDetails createUserDetails(String gitUrl) {
         return new UserDetails(gitUrl, gitUrl, details.getUsername(), details.tokenOrPassword(), details.getEmail());
@@ -179,4 +194,5 @@ public class GitHubFacade {
         repository.createWebHook(webhook.getWebhookURL());
 
     }
+
 }

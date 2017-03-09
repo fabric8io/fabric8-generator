@@ -37,13 +37,19 @@ public class GitHubProvider extends GitProvider {
     }
 
     @Override
-    public void addRepoStep(NavigationResultBuilder builder) {
+    public void addCreateRepositoryStep(NavigationResultBuilder builder) {
         builder.add(GithubRepoStep.class);
     }
 
     @Override
     public void addConfigureStep(NavigationResultBuilder builder) {
         builder.add(GithubSetupCredentialsStep.class);
+    }
+
+    @Override
+    public void addImportRepositoriesSteps(NavigationResultBuilder builder) {
+        builder.add(GithubImportPickOrganisationStep.class);
+        builder.add(GithubImportPickRepositoriesStep.class);
     }
 
     @Override

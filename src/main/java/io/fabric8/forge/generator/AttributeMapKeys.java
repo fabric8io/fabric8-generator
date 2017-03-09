@@ -29,5 +29,7 @@ public class AttributeMapKeys {
     public static final String GIT_REPO_NAME = "gitRepositoryName";
     public static final String GIT_ORGANISATION = "gitOrganisationName";
     public static final String GIT_PROVIDER = "gitProvider";
+    public static final String GIT_REPOSITORY_PATTERN = "gitRepositoryPattern";
+    public static final String GIT_REPO_NAMES = "gitRepositories";
     public static final Class<GitAccount> GIT_ACCOUNT = GitAccount.class;
 }

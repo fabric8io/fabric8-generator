@@ -16,7 +16,7 @@
  */
 package io.fabric8.forge.generator;
 
-import io.fabric8.forge.generator.git.PickAvailableGitAccountsStep;
+import io.fabric8.forge.generator.git.PickGitAccountForNewProjectStep;
 import io.fabric8.forge.generator.github.GithubRepoStep;
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.forge.generator.pipeline.ChoosePipelineStep;
@@ -35,7 +35,7 @@ public class CommonSteps {
 
         if (Configuration.isOnPremise()) {
             // lets check if we have gogs / gitlab installed locally and if so let the user pick between those and github
-            builder.add(PickAvailableGitAccountsStep.class);
+            builder.add(PickGitAccountForNewProjectStep.class);
         } else {
             builder.add(GithubRepoStep.class);
             builder.add(CreateBuildConfigStep.class);

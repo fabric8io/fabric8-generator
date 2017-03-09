@@ -35,13 +35,18 @@ public class GogsProvider extends GitProvider {
     }
 
     @Override
-    public void addRepoStep(NavigationResultBuilder builder) {
+    public void addCreateRepositoryStep(NavigationResultBuilder builder) {
         builder.add(GogsRepoStep.class);
     }
 
     @Override
     public void addConfigureStep(NavigationResultBuilder builder) {
         builder.add(GogsSetupCredentialsStep.class);
+    }
+
+    @Override
+    public void addImportRepositoriesSteps(NavigationResultBuilder builder) {
+        throw new IllegalStateException("TODO");
     }
 
     @Override

@@ -1,19 +1,28 @@
-/*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates.
- *
- * Licensed under the Eclipse Public License version 1.0, available at
- * http://www.eclipse.org/legal/epl-v10.html
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package io.fabric8.forge.generator.git;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
-import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
+import org.jboss.forge.addon.ui.command.UICommand;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -32,16 +41,16 @@ import javax.inject.Inject;
 import java.util.List;
 
 /**
- * When running on premise lets let the user setup their github credentials and store them in a Secret
  */
-public class PickAvailableGitAccountsStep extends AbstractGitCommand implements UIWizardStep {
+public abstract class AbstractPickGitAccountStep extends AbstractGitCommand implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
     protected Cache<String, List<GitProvider>> gitProviderCache;
     @Inject
     @WithAttributes(label = "git provider", required = true, description = "Select which git provider you wish to use")
-    private UISelectOne<GitProvider> gitProvider;
+    protected UISelectOne<GitProvider> gitProvider;
     @Inject
     private CacheFacade cacheManager;
+    private boolean addedSteps;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
@@ -68,10 +77,18 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
 
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
+        UICommand currentCommand = context.getCurrentCommand();
+        LOG.info("Adding next steps to command: " + currentCommand.getMetadata(context.getUIContext()).getName());
+
+/*
+        if (addedSteps) {
+            LOG.warn("Already added the steps for this command!");
+            return null;
+        }
+*/
         NavigationResultBuilder builder = NavigationResultBuilder.create();
-        // TODO use git provider based on selection
-        addRepoStep(builder);
-        builder.add(CreateBuildConfigStep.class);
+        addNextSteps(builder);
+        addedSteps = true;
         registerAttributes(context.getUIContext());
         return builder.build();
     }
@@ -89,12 +106,13 @@ public class PickAvailableGitAccountsStep extends AbstractGitCommand implements 
         }
     }
 
-    protected void addRepoStep(NavigationResultBuilder builder) {
+    protected abstract void addNextSteps(NavigationResultBuilder builder);
+
+    protected GitProvider getMandatoryGitProvider() {
         GitProvider provider = gitProvider.getValue();
         if (provider == null) {
             throw new IllegalArgumentException("No git providers!");
         }
-        provider.addRepoStep(builder);
+        return provider;
     }
-
 }

@@ -27,7 +27,7 @@ import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.ClientResource;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.ui.context.UIContext;
@@ -139,7 +139,7 @@ public class GitAccount {
         boolean update = true;
         LOG.info("Storing git account into namespace " + namespace + " with name " + secretName);
         KubernetesClientHelper.lazyCreateNamespace(kubernetesClient, namespace);
-        ClientResource<Secret, DoneableSecret> resource = kubernetesClient.secrets().inNamespace(namespace)
+        Resource<Secret, DoneableSecret> resource = kubernetesClient.secrets().inNamespace(namespace)
                 .withName(secretName);
         Secret secret = resource.get();
         if (secret == null) {

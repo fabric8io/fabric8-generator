@@ -47,6 +47,7 @@ public class CacheFacade {
 
         manager.defineConfiguration(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, createCacheConfiguration(1000, 2 * 60));
         manager.defineConfiguration(CacheNames.GITHUB_ORGANISATIONS, createCacheConfiguration(1000, 60 * 5));
+        manager.defineConfiguration(CacheNames.GITHUB_REPOSITORIES_FOR_ORGANISATION, createCacheConfiguration(1000, 60 * 5));
 
         manager.defineConfiguration(CacheNames.GOGS_ACCOUNT_FROM_SECRET, createCacheConfiguration(1000, 2 * 60));
         manager.defineConfiguration(CacheNames.GOGS_ORGANISATIONS, createCacheConfiguration(1000, 60 * 5));

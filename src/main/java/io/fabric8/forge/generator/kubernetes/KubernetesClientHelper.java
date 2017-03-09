@@ -19,6 +19,7 @@ package io.fabric8.forge.generator.kubernetes;
 import io.fabric8.forge.generator.EnvironmentVariables;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.api.KubernetesNames;
 import io.fabric8.kubernetes.api.extensions.Configs;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -77,8 +78,7 @@ public class KubernetesClientHelper {
         if (Strings.isNullOrBlank(userName)) {
             throw new IllegalStateException("No kubernetes username could be found!");
         }
-        // TODO replace with a better function that ensures we generate a valid namespace name
-        return "user-secrets-" + userName.toLowerCase().replace(':', '-').replace('@', '-').replace('.', '-');
+        return KubernetesNames.convertToKubernetesName("user-secrets-" + userName, false);
     }
 
     /**

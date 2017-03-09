@@ -45,10 +45,14 @@ import java.util.Collection;
  */
 public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
+
+    private final String accountsCacheKey;
+    private final String organisationsCacheKey;
+
     protected Cache<String, GitAccount> accountCache;
     protected Cache<String, Collection<GitOrganisationDTO>> organisationsCache;
     @Inject
-    private CacheFacade cacheManager;
+    protected CacheFacade cacheManager;
     /**
      * The name of the upstream repo
      */
@@ -66,9 +70,14 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
         return orgName;
     }
 
+    public AbstractGitRepoStep(String accountsCacheKey, String organisationsCacheKey) {
+        this.accountsCacheKey = accountsCacheKey;
+        this.organisationsCacheKey = organisationsCacheKey;
+    }
+
     public void initializeUI(final UIBuilder builder) throws Exception {
-        this.accountCache = cacheManager.getCache(CacheNames.GOGS_ACCOUNT_FROM_SECRET);
-        this.organisationsCache = cacheManager.getCache(CacheNames.GOGS_ORGANISATIONS);
+        this.accountCache = cacheManager.getCache(accountsCacheKey);
+        this.organisationsCache = cacheManager.getCache(organisationsCacheKey);
     }
 
     public void importNewGitProject(UserDetails userDetails, File basedir, String message, String gitUrl)

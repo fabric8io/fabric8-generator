@@ -9,6 +9,7 @@ package io.fabric8.forge.generator.gogs;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.Configuration;
+import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.AbstractGitRepoStep;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
@@ -56,6 +57,9 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
 
     private GogsFacade gogs;
 
+    public GogsRepoStep() {
+        super(CacheNames.GOGS_ACCOUNT_FROM_SECRET, CacheNames.GOGS_ORGANISATIONS);
+    }
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);

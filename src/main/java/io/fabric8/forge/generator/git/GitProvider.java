@@ -86,11 +86,14 @@ public abstract class GitProvider {
         return name;
     }
 
-    public abstract void addRepoStep(NavigationResultBuilder builder);
+    public abstract void addCreateRepositoryStep(NavigationResultBuilder builder);
+
+    public abstract void addImportRepositoriesSteps(NavigationResultBuilder builder);
 
     public abstract boolean isConfiguredCorrectly();
 
     public abstract void addConfigureStep(NavigationResultBuilder builder);
 
     public abstract void registerWebHook(GitAccount details, WebHookDetails webhook) throws IOException;
+
 }

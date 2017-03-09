@@ -140,13 +140,20 @@ public class GitHubFacade {
             }
         }
     }
-    
+
     public Collection<String> getRespositoriesForOrganisation(String orgName) {
         Set<String> answer = new TreeSet<>();
         GitHub github = this.github;
         if (github != null) {
             try {
-                Map<String, GHRepository> repositories = github.getOrganization(orgName).getRepositories();
+
+                Map<String, GHRepository> repositories;
+                String username = details.getUsername();
+                if (Strings.isNullOrBlank(orgName) || orgName.equals(username)) {
+                    repositories = github.getUser(username).getRepositories();
+                } else {
+                    repositories = github.getOrganization(orgName).getRepositories();
+                }
                 answer.addAll(repositories.keySet());
             } catch (IOException e) {
                 LOG.warn("Caught exception looking up github repositories for " + orgName + ". " + e, e);
@@ -190,7 +197,7 @@ public class GitHubFacade {
     public void createWebHook(WebHookDetails webhook) throws IOException {
         String orgName = webhook.getOrganisation();
         String repoName = webhook.getRepositoryName();
-        GHRepository  repository = github.getRepository(orgName + "/" + repoName);
+        GHRepository repository = github.getRepository(orgName + "/" + repoName);
         repository.createWebHook(webhook.getWebhookURL());
 
     }

@@ -19,7 +19,6 @@ package io.fabric8.forge.generator.git;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.devops.ProjectConfigs;
 import io.fabric8.forge.generator.cache.CacheFacade;
-import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
 import io.fabric8.project.support.GitUtils;
 import io.fabric8.project.support.UserDetails;
@@ -62,17 +61,17 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
      */
     private String branch = "master";
 
+    public AbstractGitRepoStep(String accountsCacheKey, String organisationsCacheKey) {
+        this.accountsCacheKey = accountsCacheKey;
+        this.organisationsCacheKey = organisationsCacheKey;
+    }
+
     protected static String getOrganisationName(GitOrganisationDTO org) {
         String orgName = null;
         if (org != null) {
             orgName = org.getName();
         }
         return orgName;
-    }
-
-    public AbstractGitRepoStep(String accountsCacheKey, String organisationsCacheKey) {
-        this.accountsCacheKey = accountsCacheKey;
-        this.organisationsCacheKey = organisationsCacheKey;
     }
 
     public void initializeUI(final UIBuilder builder) throws Exception {

@@ -16,6 +16,7 @@
  */
 package io.fabric8.forge.generator.git;
 
+import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
@@ -23,20 +24,20 @@ import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 
 /**
- * Presents a user with a list of git account kinds then lets the user configure it
+ * Imports an organisation, selection of repos or all repos from a git provider
  */
-public class ConfigureGitAccount extends AbstractGitProviderCommand {
-
+public class ImportGit extends AbstractGitProviderCommand {
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
-        return Metadata.forCommand(getClass()).name("fabric8: Configure Git Account")
-                .description("Configures a git account")
+        return Metadata.forCommand(getClass()).name("fabric8: Import Git")
+                .description("Imports a git organisation or repositories")
                 .category(Categories.create("Fabric8"));
     }
 
     @Override
     protected void addNextStep(NavigationResultBuilder builder, GitProvider provider) {
-        provider.addConfigureStep(builder);
+        provider.addImportRepositoriesSteps(builder);
+        builder.add(CreateBuildConfigStep.class);
     }
 
 }

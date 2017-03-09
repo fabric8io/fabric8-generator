@@ -15,8 +15,7 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
-import org.jboss.forge.addon.ui.input.UIInput;
-import org.jboss.forge.addon.ui.input.UISelectMany;
+import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
@@ -25,29 +24,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
-import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAMES;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPOSITORY_PATTERN;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAMES;
 
 /**
  * Lets the user configure the GitHub organisation and repo name that they want to pick for a new project
  */
 public class GithubImportPickRepositoriesStep extends AbstractGithubStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
-
-    @Inject
-    @WithAttributes(label = "Repository pattern", description = "The pattern to match repositories")
-    private UIInput<String> gitRepositoryPattern;
-
-    @Inject
-    @WithAttributes(label = "Repositories", description = "The repositories to import")
-    private UISelectMany<String> gitRepositories;
-
     protected Cache<String, Collection<String>> repositoriesCache;
+    @Inject
+    @WithAttributes(label = "Repository name pattern", description = "The regex pattern to match repository names")
+    private UISelectOne<String> gitRepositoryPattern;
+    /*
+        // TODO the front end can't handle this yet so lets disable for now
 
+        @Inject
+        @WithAttributes(label = "Repositories", description = "The repositories to import")
+        private UISelectMany<String> gitRepositories;
+    */
     private GitHubFacade github;
+    private Collection<String> repositoryNames;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
@@ -62,10 +65,24 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         String userKey = github.getDetails().getUserCacheKey();
         String orgKey = userKey + "/" + gitOrganisation;
 
-        Collection<String> repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRespositoriesForOrganisation(gitOrganisation));
-        gitRepositories.setValueChoices(repositoryNames);
+        this.repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRespositoriesForOrganisation(gitOrganisation));
+        LOG.info("For organisation: " + gitOrganisation + " found repositories: " + repositoryNames);
+
+
+        List<String> patternChoices = new ArrayList<>();
+        String defaultChoice = ".*";
+        patternChoices.add(defaultChoice);
+        patternChoices.addAll(repositoryNames);
+
+        gitRepositoryPattern.setDefaultValue(defaultChoice);
+        gitRepositoryPattern.setValueChoices(patternChoices);
+
         builder.add(gitRepositoryPattern);
+
+/*
+        gitRepositories.setValueChoices(repositoryNames);
         builder.add(gitRepositories);
+*/
     }
 
     @Override
@@ -76,9 +93,10 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         }
         String pattern = gitRepositoryPattern.getValue();
         if (Strings.isNullOrBlank(pattern)) {
-            Iterable<String> value = gitRepositories.getValue();
-            if (!value.iterator().hasNext()) {
-                context.addValidationWarning(gitRepositoryPattern, "You must enter a pattern or select one or more repositories to import");
+            try {
+                Pattern regex = Pattern.compile(pattern);
+            } catch (Exception e) {
+                context.addValidationWarning(gitRepositoryPattern, "Not a valid regular expression: " + e.getMessage());
             }
         }
     }
@@ -90,10 +108,27 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         }
         UIContext uiContext = context.getUIContext();
         String pattern = gitRepositoryPattern.getValue();
+/*
         Iterable<String> repositories = gitRepositories.getValue();
         if (Strings.isNullOrBlank(pattern)) {
             pattern = createPatternFromRepositories(repositories);
         }
+*/
+        List<String> repositories = new ArrayList<>();
+
+        Pattern regex;
+        try {
+            regex = Pattern.compile(pattern);
+        } catch (Exception e) {
+            return Results.fail("Invalid regular expression `" + pattern + "` due to: " + e, e);
+        }
+
+        for (String repositoryName : repositoryNames) {
+            if (regex.matcher(repositoryName).matches()) {
+                repositories.add(repositoryName);
+            }
+        }
+
         uiContext.getAttributeMap().put(GIT_REPOSITORY_PATTERN, pattern);
         uiContext.getAttributeMap().put(GIT_REPO_NAMES, repositories);
         return Results.success();

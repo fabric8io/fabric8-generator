@@ -43,7 +43,7 @@ public abstract class GitProvider {
     }
 
     public static List<GitProvider> loadGitProviders() {
-        List<GitProvider> answer = new ArrayList();
+        List<GitProvider> answer = new ArrayList<>();
         answer.add(new GitHubProvider());
 
         if (Configuration.isOnPremise()) {

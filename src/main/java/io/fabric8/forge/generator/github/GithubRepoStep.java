@@ -7,12 +7,7 @@
 
 package io.fabric8.forge.generator.github;
 
-import io.fabric8.forge.generator.AttributeMapKeys;
-import io.fabric8.forge.generator.Configuration;
-import io.fabric8.forge.generator.git.AbstractGitRepoStep;
-import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
-import io.fabric8.forge.generator.git.GitSecretNames;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
 import org.jboss.forge.addon.convert.Converter;

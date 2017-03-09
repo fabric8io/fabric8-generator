@@ -68,7 +68,7 @@ public class GogsFacade {
     }
 
     public Collection<GitOrganisationDTO> loadOrganisations(UIBuilder builder) {
-        SortedSet<GitOrganisationDTO> organisations = new TreeSet();
+        SortedSet<GitOrganisationDTO> organisations = new TreeSet<>();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {
             organisations.add(new GitOrganisationDTO(username));

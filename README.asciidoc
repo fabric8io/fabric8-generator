@@ -91,11 +91,21 @@ Then hit return and enjoy the ride!!!
 
 ==== import a git repo
 
-If you are running a jenkins service in your current openshift namespace you should be able to import one or more projects from your github account via:
+If you are running a jenkins service in your current openshift namespace which has the https://wiki.jenkins-ci.org/display/JENKINS/GitHub+Organization+Folder+Plugin[github organisation folder plugin] installed like the http://central.maven.org/maven2/io/fabric8/devops/apps/jenkins-openshift/[fabric8 image] you should be able to import one or more repositories from your github account or any other organisation via the following command:
+
 
 [source,bash]
 ----
 fabric8-import-git --git-repository-pattern myprojectname
+----
+
+This command will create a pipeline for all matching repositories and all branches with a Jenkinsfile!
+
+To import all projects use the pattern: `.*`
+
+[source,bash]
+----
+fabric8-import-git --git-repository-pattern ".*"
 ----
 
 === Debugging

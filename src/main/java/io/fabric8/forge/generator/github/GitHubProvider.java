@@ -20,7 +20,6 @@ import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.GitSecretNames;
 import io.fabric8.forge.generator.git.WebHookDetails;
-import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;

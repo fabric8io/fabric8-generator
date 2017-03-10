@@ -50,7 +50,6 @@ public abstract class AbstractPickGitAccountStep extends AbstractGitCommand impl
     protected UISelectOne<GitProvider> gitProvider;
     @Inject
     private CacheFacade cacheManager;
-    private boolean addedSteps;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
@@ -78,17 +77,8 @@ public abstract class AbstractPickGitAccountStep extends AbstractGitCommand impl
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
         UICommand currentCommand = context.getCurrentCommand();
-        LOG.info("Adding next steps to command: " + currentCommand.getMetadata(context.getUIContext()).getName());
-
-/*
-        if (addedSteps) {
-            LOG.warn("Already added the steps for this command!");
-            return null;
-        }
-*/
         NavigationResultBuilder builder = NavigationResultBuilder.create();
         addNextSteps(builder);
-        addedSteps = true;
         registerAttributes(context.getUIContext());
         return builder.build();
     }

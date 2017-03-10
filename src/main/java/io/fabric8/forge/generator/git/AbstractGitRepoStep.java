@@ -61,6 +61,7 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
      */
     private String branch = "master";
 
+    @Inject
     public AbstractGitRepoStep(String accountsCacheKey, String organisationsCacheKey) {
         this.accountsCacheKey = accountsCacheKey;
         this.organisationsCacheKey = organisationsCacheKey;

@@ -69,6 +69,7 @@ addon-watch-start
 fabric8-configure-git-account --git-provider github --git-user-name MYUSER --git-password MY_TOKEN --git-email MY_EMAIL
 ----
 
+
 ==== create a project!
 
 * if you are not running a jenkins service in your current openshift namespace you will need to disable the CI part by adding the following argument when you create a project:
@@ -87,6 +88,15 @@ obsidian-new-quickstart --named demo131 --type rest_springboot-tomcat
 ----
 
 Then hit return and enjoy the ride!!!
+
+==== import a git repo
+
+If you are running a jenkins service in your current openshift namespace you should be able to import one or more projects from your github account via:
+
+[source,bash]
+----
+fabric8-import-git --git-repository-pattern myprojectname
+----
 
 === Debugging
 

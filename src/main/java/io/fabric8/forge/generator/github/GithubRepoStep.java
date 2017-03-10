@@ -8,18 +8,22 @@
 package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
+import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
+import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
+import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 import org.kohsuke.github.GHRepository;
 import org.slf4j.Logger;
@@ -111,6 +115,13 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
     }
 
     @Override
+    public NavigationResult next(UINavigationContext context) throws Exception {
+        NavigationResultBuilder builder = NavigationResultBuilder.create();
+        builder.add(CreateBuildConfigStep.class);
+        return builder.build();
+    }
+
+    @Override
     public Result execute(UIExecutionContext context) throws Exception {
         if (github == null) {
             return Results.fail("No github account setup");
@@ -133,19 +144,24 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
 
         String gitOwnerName = org;
         String gitUrl = "https://github.com/" + orgAndRepo + ".git";
+        String repoUrl = null;
         try {
             GHRepository repository = github.createRepository(org, repo, gitRepoDescription.getValue());
             URL htmlUrl = repository.getHtmlUrl();
             if (htmlUrl != null) {
-                gitUrl = htmlUrl.toString() + ".git";
+                repoUrl = htmlUrl.toString();
+                gitUrl = repoUrl + ".git";
             }
             gitOwnerName = repository.getOwnerName();
         } catch (IOException e) {
             LOG.error("Failed to create repository  " + orgAndRepo + " " + e, e);
             return Results.fail("Failed to create repository  " + orgAndRepo + " " + e, e);
         }
+        if (Strings.isNullOrBlank(repoUrl)) {
+            repoUrl = gitUrl;
+        }
 
-        LOG.info("Created repository: " + gitUrl);
+        LOG.info("Created repository: " + repoUrl);
         uiContext.getAttributeMap().put(GIT_URL, gitUrl);
         uiContext.getAttributeMap().put(GIT_OWNER_NAME, gitOwnerName);
         uiContext.getAttributeMap().put(GIT_ORGANISATION, org);
@@ -164,7 +180,7 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
             LOG.error("Failed to import project to " + gitUrl + " " + e, e);
             return Results.fail("Failed to import project to " + gitUrl + ". " + e, e);
         }
-        return Results.success();
+        return Results.success("Created git repository: " + repoUrl);
     }
 
 

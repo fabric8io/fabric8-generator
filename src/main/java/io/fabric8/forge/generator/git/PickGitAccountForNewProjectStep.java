@@ -7,7 +7,6 @@
 
 package io.fabric8.forge.generator.git;
 
-import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 
 /**
@@ -19,6 +18,5 @@ public class PickGitAccountForNewProjectStep extends AbstractPickGitAccountStep 
     protected void addNextSteps(NavigationResultBuilder builder) {
         GitProvider provider = getMandatoryGitProvider();
         provider.addCreateRepositoryStep(builder);
-        builder.add(CreateBuildConfigStep.class);
     }
 }

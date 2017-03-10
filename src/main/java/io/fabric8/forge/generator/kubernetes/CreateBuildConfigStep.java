@@ -123,6 +123,16 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         return oldPattern + "|" + repoName;
     }
 
+    public static void closeQuietly(Client client) {
+        if (client != null) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                LOG.debug("Ignoring exception closing client: " + e, e);
+            }
+        }
+    }
+
     public void initializeUI(final UIBuilder builder) throws Exception {
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         final String key = KubernetesClientHelper.getUserCacheKey();
@@ -223,7 +233,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             createAndApplyBuildConfig(kubernetes, namespace, projectName, gitUrl, annotations);
         }
 
-        String message = "Created OpenShift Build";
+        String message = "Created OpenShift BuildConfig";
         if (addCIWebHooks.getValue()) {
             String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes);
             String jenkinsUrl;
@@ -239,7 +249,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 botSecret = "secret101";
             }
             String oauthToken = kubernetes.getConfiguration().getOauthToken();
-            System.out.println("Using OpenShift token: " + oauthToken);
             String authHeader = "Bearer " + oauthToken;
 
             String webhookUrl = URLUtils.pathJoin(jenkinsUrl, "/github-webhook/");
@@ -257,7 +266,9 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 gitRepoPatternOrName = Strings.join(gitRepoNameList, "|");
             }
             try {
-                ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, oauthToken, authHeader, gitOwnerName, gitRepoPatternOrName);
+                String jobUrl = URLUtils.pathJoin(jenkinsUrl, "/job/" + gitOwnerName);
+                message += ", Jenkins job: " + jobUrl;
+                ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, jobUrl, oauthToken, authHeader, gitOwnerName, gitRepoPatternOrName);
             } catch (Exception e) {
                 LOG.error("Failed to create Jenkins Organisation job: " + e, e);
                 return Results.fail("Failed to create Jenkins Organisation job:: " + e, e);
@@ -271,12 +282,12 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                         LOG.error("Failed: " + e, e);
                         return Results.fail(e.getMessage(), e);
                     }
-                    message += " and CI webhooks";
                 } catch (Exception e) {
                     LOG.error("Failed to create CI webhooks for: " + gitRepoName + ": " + e, e);
                     return Results.fail("Failed to create CI webhooks: " + e, e);
                 }
             }
+            message += " and added git webhooks to repositories " + Strings.join(gitRepoNameList, ", ");
         }
         return Results.success(message);
     }
@@ -483,7 +494,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 response = client.target(createUrl).request().
                         header("Authorization", authHeader).
                         post(Entity.form(form), Response.class);
-                
+
                 int status = response.getStatus();
                 String message = null;
                 Response.StatusType statusInfo = response.getStatusInfo();
@@ -507,19 +518,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         return response;
     }
 
-    public static void closeQuietly(Client client) {
-        if (client != null) {
-            try {
-                client.close();
-            } catch (Exception e) {
-                LOG.debug("Ignoring exception closing client: " + e, e);
-            }
-        }
-    }
-
-
-    private Response ensureJenkinsCDOrganisationJobCreated(String jenkinsUrl, String oauthToken, String authHeader, String gitOwnerName, String gitRepoName) {
-        String jobUrl = URLUtils.pathJoin(jenkinsUrl, "/job/" + gitOwnerName);
+    private Response ensureJenkinsCDOrganisationJobCreated(String jenkinsUrl, String jobUrl, String oauthToken, String authHeader, String gitOwnerName, String gitRepoName) {
         String triggerUrl = URLUtils.pathJoin(jobUrl, "/build?delay=0");
         String getUrl = URLUtils.pathJoin(jobUrl, "/config.xml");
         String createUrl = URLUtils.pathJoin(jenkinsUrl, "/createItem?name=" + gitOwnerName);

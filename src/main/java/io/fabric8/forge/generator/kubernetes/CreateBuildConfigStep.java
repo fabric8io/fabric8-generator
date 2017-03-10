@@ -233,7 +233,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             createAndApplyBuildConfig(kubernetes, namespace, projectName, gitUrl, annotations);
         }
 
-        String message = "Created OpenShift BuildConfig";
+        String message = "Created OpenShift BuildConfig " + namespace + "/" + projectName;
         if (addCIWebHooks.getValue()) {
             String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes);
             String jenkinsUrl;

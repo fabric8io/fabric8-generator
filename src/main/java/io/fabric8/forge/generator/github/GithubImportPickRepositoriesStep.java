@@ -66,8 +66,6 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         String orgKey = userKey + "/" + gitOrganisation;
 
         this.repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRespositoriesForOrganisation(gitOrganisation));
-        LOG.info("For organisation: " + gitOrganisation + " found repositories: " + repositoryNames);
-
 
         List<String> patternChoices = new ArrayList<>();
         String defaultChoice = ".*";

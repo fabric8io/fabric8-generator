@@ -400,7 +400,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 LOG.error("Failed to trigger job " + triggerUrl + ". Status: " + status + " message: " + message);
             }
         } finally {
-            client.close();
+            closeQuietly(client);
         }
     }
 
@@ -433,7 +433,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 }
             }
         } finally {
-            client.close();
+            closeQuietly(client);
         }
         return null;
     }
@@ -443,8 +443,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
         LOG.info("Creating Jenkins fabric8 credentials for github user name: " + gitUserName);
 
-        //String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/createCredentials");
-        String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/");
+        String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/createCredentials");
         /*
         String getUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/credentials/fabric8");
 
@@ -478,16 +477,44 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             Form form = new Form();
             form.param("json", json);
 
+            Client client = null;
             try {
-                return invokeRequestWithRedirectResponse(createUrl,
-                        target -> target.request(MediaType.APPLICATION_JSON).
-                                header("Authorization", authHeader).
-                                post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED), Response.class));
+                client = createClient();
+                response = client.target(createUrl).request().
+                        header("Authorization", authHeader).
+                        post(Entity.form(form), Response.class);
+                
+                int status = response.getStatus();
+                String message = null;
+                Response.StatusType statusInfo = response.getStatusInfo();
+                if (statusInfo != null) {
+                    message = statusInfo.getReasonPhrase();
+                }
+                String extra = "";
+                if (status == 302) {
+                    extra = " Location: " + response.getLocation();
+                }
+                LOG.info("Got response code from Jenkins: " + status + " message: " + message + " from URL: " + createUrl + extra);
+                if (status <= 200 || status > 302) {
+                    LOG.error("Failed to create credentials " + createUrl + ". Status: " + status + " message: " + message);
+                }
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to create the fabric8 credentials in Jenkins at the URL " + createUrl + ". " + e, e);
+            } finally {
+                closeQuietly(client);
             }
         }
         return response;
+    }
+
+    public static void closeQuietly(Client client) {
+        if (client != null) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                LOG.debug("Ignoring exception closing client: " + e, e);
+            }
+        }
     }
 
 
@@ -585,12 +612,13 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     }
 
     protected Response invokeRequestWithRedirectResponse(String url, Function<WebTarget, Response> callback) {
-        Client client = createClient();
-        WebTarget target = client.target(url);
         boolean redirected = false;
         Response response = null;
         for (int i = 0, retries = 2; i < retries; i++) {
+            Client client = null;
             try {
+                client = createClient();
+                WebTarget target = client.target(url);
                 response = callback.apply(target);
                 int status = response.getStatus();
                 String reasonPhrase = "";
@@ -611,7 +639,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                         throw new WebApplicationException("Failed to process " + url + " and got status: " + status + " " + reasonPhrase + " but no location header!", response);
                     }
                     url = uri.toString();
-                    target = client.target(uri);
                 } else if (status < 200 || status >= 300) {
                     LOG.warn("Failed to process " + url + " and got status: " + status + " " + reasonPhrase, response);
                     throw new WebApplicationException("Failed to process " + url + " and got status: " + status + " " + reasonPhrase, response);
@@ -625,9 +652,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 redirected = true;
                 URI uri = redirect.getLocation();
                 url = uri.toString();
-                target = client.target(uri);
             } finally {
-                client.close();
+                closeQuietly(client);
             }
         }
         return response;

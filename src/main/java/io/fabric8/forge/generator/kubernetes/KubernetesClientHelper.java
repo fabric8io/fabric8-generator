@@ -37,11 +37,12 @@ import org.jboss.forge.addon.ui.context.UIContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
+
 /**
  */
 public class KubernetesClientHelper {
     private static final transient Logger LOG = LoggerFactory.getLogger(KubernetesClientHelper.class);
-    public static final String DEFAULT_OPENSHIFT_API_URL = "https://api.free-int.openshift.com";
 
     /**
      * Should create a kubernetes client using the current logged in users account
@@ -58,7 +59,11 @@ public class KubernetesClientHelper {
     public static KubernetesClient createKubernetesClientForSSO(UIContext context) {
         String authHeader = TokenHelper.getMandatoryAuthHeader(context);
         String openshiftToken = TokenHelper.getMandatoryTokenFor(KeycloakEndpoint.GET_OPENSHIFT_TOKEN, authHeader);
-        String openShiftApiUrl = Systems.getEnvVar(EnvironmentVariables.OPENSHIFT_API_URL, DEFAULT_OPENSHIFT_API_URL);
+        String openShiftApiUrl = System.getenv(EnvironmentVariables.OPENSHIFT_API_URL);
+        if (Strings.isNullOrBlank(openShiftApiUrl)) {
+            throw new WebApplicationException("No environment variable defined: "
+                    + EnvironmentVariables.OPENSHIFT_API_URL + " so cannot connect to OpenShift Online!");
+        }
         Config config = new ConfigBuilder().withMasterUrl(openShiftApiUrl).withOauthToken(openshiftToken).build();
         return new DefaultKubernetesClient(config);
     }

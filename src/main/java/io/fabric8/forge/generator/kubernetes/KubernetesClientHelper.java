@@ -17,17 +17,23 @@
 package io.fabric8.forge.generator.kubernetes;
 
 import io.fabric8.forge.generator.EnvironmentVariables;
+import io.fabric8.forge.generator.keycloak.KeycloakEndpoint;
+import io.fabric8.forge.generator.keycloak.TokenHelper;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.KubernetesNames;
 import io.fabric8.kubernetes.api.extensions.Configs;
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.User;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
+import io.fabric8.utils.Systems;
+import org.jboss.forge.addon.ui.context.UIContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,15 +41,26 @@ import org.slf4j.LoggerFactory;
  */
 public class KubernetesClientHelper {
     private static final transient Logger LOG = LoggerFactory.getLogger(KubernetesClientHelper.class);
+    public static final String DEFAULT_OPENSHIFT_API_URL = "https://api.free-int.openshift.com";
 
     /**
      * Should create a kubernetes client using the current logged in users account
      *
      * @return the kubernetes client for the current user
      */
-    public static KubernetesClient createKubernetesClientForUser() {
-        // TODO use the current users token
+    public static KubernetesClient createKubernetesClientForCurrentCluster() {
         return new DefaultKubernetesClient();
+    }
+
+    /**
+     * Creates the kubernetes client for the SSO signed in user
+     */
+    public static KubernetesClient createKubernetesClientForSSO(UIContext context) {
+        String authHeader = TokenHelper.getMandatoryAuthHeader(context);
+        String openshiftToken = TokenHelper.getMandatoryTokenFor(KeycloakEndpoint.GET_OPENSHIFT_TOKEN, authHeader);
+        String openShiftApiUrl = Systems.getEnvVar(EnvironmentVariables.OPENSHIFT_API_URL, DEFAULT_OPENSHIFT_API_URL);
+        Config config = new ConfigBuilder().withMasterUrl(openShiftApiUrl).withOauthToken(openshiftToken).build();
+        return new DefaultKubernetesClient(config);
     }
 
     /**
@@ -143,4 +160,5 @@ public class KubernetesClientHelper {
             }
         }
     }
+
 }

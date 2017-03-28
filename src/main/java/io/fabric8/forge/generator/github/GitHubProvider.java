@@ -56,7 +56,7 @@ public class GitHubProvider extends GitProvider {
     public boolean isConfiguredCorrectly() {
         if (configuredCorrectly == null) {
             KubernetesClient kubernetesClient = KubernetesClientHelper
-                    .createKubernetesClientForUser();
+                    .createKubernetesClientForCurrentCluster();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
             String githubSecretName = GitSecretNames.GITHUB_SECRET_NAME;
             details = GitAccount.loadFromSecret(kubernetesClient, namespace, githubSecretName);

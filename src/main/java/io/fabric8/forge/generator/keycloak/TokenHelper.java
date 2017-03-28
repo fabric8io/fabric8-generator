@@ -22,13 +22,16 @@ import org.jboss.forge.addon.ui.context.UIContext;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.List;
+import java.util.RandomAccess;
 
 /**
  */
 public class TokenHelper {
 
     public static String getMandatoryAuthHeader(UIContext context) {
-        String authToken = (String) context.getAttributeMap().get("authorisation");
+        String authToken = headerToString(context.getAttributeMap().get("Authorization"));
         if (Strings.isNullOrBlank(authToken)) {
             authToken = System.getenv(EnvironmentVariables.TESTING_OAUTH_HEADER);
         }
@@ -38,12 +41,31 @@ public class TokenHelper {
         return authToken;
     }
 
+    private static String headerToString(Object authorization) {
+        if (authorization == null) {
+            return null;
+        }
+        if (authorization instanceof List) {
+            List list = (List) authorization;
+            if (!list.isEmpty()) {
+                return headerToString(list.get(0));
+            }
+        }
+        if (authorization instanceof Object[]) {
+            Object[] array = (Object[]) authorization;
+            if (array.length > 0) {
+                return headerToString(array[0]);
+            }
+        }
+        return authorization.toString();
+    }
+
     public static String getMandatoryTokenFor(KeycloakEndpoint endpoint, String authHeader) {
         KeycloakClient client = new KeycloakClient();
-        String gitHubToken = client.getTokenFor(endpoint, authHeader);
-        if (Strings.isNullOrBlank(gitHubToken)) {
-            throw new WebApplicationException("No github auth token available!", Response.Status.UNAUTHORIZED);
+        String token = client.getTokenFor(endpoint, authHeader);
+        if (Strings.isNullOrBlank(token)) {
+            throw new WebApplicationException("No auth token available for " + endpoint.getName(), Response.Status.UNAUTHORIZED);
         }
-        return gitHubToken;
+        return token;
     }
 }

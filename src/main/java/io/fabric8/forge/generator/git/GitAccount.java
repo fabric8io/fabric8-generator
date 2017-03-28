@@ -103,7 +103,7 @@ public class GitAccount {
     public static GitAccount loadGitDetailsFromSecret(Cache<String, GitAccount> cache, String secretName) {
         final String key = KubernetesClientHelper.getUserCacheKey();
         return cache.computeIfAbsent(key, k -> {
-            KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForUser();
+            KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
             GitAccount details = loadFromSecret(kubernetesClient, namespace, secretName);
             LOG.info("Loaded details: " + details + " for cache key: " + key);

@@ -39,6 +39,7 @@ import java.util.Collection;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ACCOUNT;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ORGANISATION;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_OWNER_NAME;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_PROVIDER;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAME;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_URL;
 
@@ -167,6 +168,7 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
         uiContext.getAttributeMap().put(GIT_ORGANISATION, org);
         uiContext.getAttributeMap().put(GIT_REPO_NAME, repo);
         uiContext.getAttributeMap().put(GIT_ACCOUNT, github.getDetails());
+        uiContext.getAttributeMap().put(GIT_PROVIDER, new GitHubProvider());
 
         Result result = updateGitURLInJenkinsfile(basedir, gitUrl);
         if (result != null) {

@@ -48,7 +48,7 @@ public abstract class GitProvider {
 
         if (Configuration.isOnPremise()) {
             // check for gogs / gitlab providers based on available services in kubernetes/openshift
-            KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForUser();
+            KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
             String namespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetesClient);
 
             if (hasService(kubernetesClient, namespace, ServiceNames.GOGS)) {

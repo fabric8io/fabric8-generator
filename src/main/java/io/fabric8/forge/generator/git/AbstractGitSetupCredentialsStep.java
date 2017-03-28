@@ -46,7 +46,7 @@ public abstract class AbstractGitSetupCredentialsStep extends AbstractDevToolsCo
     }
 
     protected GitAccount loadGitAccountFromSecret(String githubSecretName) {
-        kubernetesClient = KubernetesClientHelper.createKubernetesClientForUser();
+        kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
         namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
         return GitAccount.loadFromSecret(kubernetesClient, namespace, githubSecretName);
     }

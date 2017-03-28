@@ -24,4 +24,5 @@ public class EnvironmentVariables {
     public static final String NAMESPACE = "KUBERNETES_NAMESPACE";
 
     public static final String TESTING_OAUTH_HEADER = "TESTING_OAUTH_HEADER";
+    public static final String OPENSHIFT_API_URL = "OPENSHIFT_API_URL";
 }

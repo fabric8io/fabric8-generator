@@ -26,13 +26,19 @@ public enum KeycloakEndpoint {
     // http://sso.prod-preview.openshift.io/auth/realms/fabric8/account
     // authorization: Bearer <ACCESS_TOKEN>
     // http://sso.prod-preview.openshift.io/auth/realms/fabric8/account/identity
-    GET_OPENSHIFT_TOKEN("/auth/realms/fabric8/broker/openshift/token"),
-    GET_GITHUB_TOKEN("/auth/realms/fabric8/broker/github/token");
+    GET_OPENSHIFT_TOKEN("OpenShift", "/auth/realms/fabric8/broker/openshift-v3/token"),
+    GET_GITHUB_TOKEN("GitHub", "/auth/realms/fabric8/broker/github/token");
 
+    private final String name;
     private final String endpoint;
 
-    private KeycloakEndpoint(String path) {
+    private KeycloakEndpoint(String name, String path) {
+        this.name = name;
         this.endpoint = URLUtils.pathJoin(Configuration.keycloakSaaSURL(), path);
+    }
+
+    public String getName() {
+        return name;
     }
 
     @Override

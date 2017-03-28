@@ -16,12 +16,15 @@
  */
 package io.fabric8.forge.generator.keycloak;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -43,7 +46,20 @@ public class KeycloakClient {
     public String getTokenFor(KeycloakEndpoint endpoint, String authHeader) {
         // access_token=token&scope=scope
         String responseBody = getResponseBody(endpoint, authHeader);
-        Map<String, String> parameter = UrlHelper.splitQuery(responseBody);
+        if (responseBody == null) {
+            return null;
+        }
+        responseBody = responseBody.trim();
+        Map<String, String> parameter;
+        if (responseBody.startsWith("{") && responseBody.endsWith("}")) {
+            try {
+                parameter = new ObjectMapper().readerFor(Map.class).readValue(responseBody);
+            } catch (IOException e) {
+                throw new WebApplicationException("Failed to parse JSON token reply: " + e, e);
+            }
+        } else {
+            parameter = UrlHelper.splitQuery(responseBody);
+        }
         String token = parameter.get(ACCESS_TOKEN);
         LOG.info("Token: {}", token);
         String scope = parameter.get(SCOPE);

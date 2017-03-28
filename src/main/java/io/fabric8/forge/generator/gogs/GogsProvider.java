@@ -53,7 +53,7 @@ public class GogsProvider extends GitProvider {
     public boolean isConfiguredCorrectly() {
         if (configuredCorrectly == null) {
             KubernetesClient kubernetesClient = KubernetesClientHelper
-                    .createKubernetesClientForUser();
+                    .createKubernetesClientForCurrentCluster();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
             String secretName = GitSecretNames.GOGS_SECRET_NAME;
             details = GitAccount.loadFromSecret(kubernetesClient, namespace, secretName);

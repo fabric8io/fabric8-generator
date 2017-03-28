@@ -16,13 +16,13 @@
     <fabric8.version>2.2.202</fabric8.version>
 
     <version.furnace>2.25.2.Final</version.furnace>
-    <version.forge>3.6.0.Alpha2</version.forge>
-    <version.wildfly-swarm>2017.2.0</version.wildfly-swarm>
+    <version.forge>3.6.0.Final</version.forge>
+    <version.wildfly-swarm>2017.3.3</version.wildfly-swarm>
     <fabric8-forge.version>2.3.90</fabric8-forge.version>
     <version.vertx>1.2.1</version.vertx>
     <kohsuke.github-api.version>1.84</kohsuke.github-api.version>
     <infinispan-embedded.version>9.0.0.CR2</infinispan-embedded.version>
-    <obsidian-generator.version>1.0.0.Alpha2_02</obsidian-generator.version>
+    <obsidian-generator.version>1.0.0.Alpha2_04</obsidian-generator.version>
 
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
@@ -67,7 +67,18 @@
       <id>repo.jenkins-ci.org</id>
       <url>http://repo.jenkins-ci.org/public/</url>
     </repository>
+    <repository>
+      <id>jboss-public-repo</id>
+      <url>https://repository.jboss.org/nexus/content/groups/public</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
   </repositories>
+
 
   <build>
     <finalName>fabric8-generator</finalName>

@@ -64,7 +64,10 @@ public class KubernetesClientHelper {
             throw new WebApplicationException("No environment variable defined: "
                     + EnvironmentVariables.OPENSHIFT_API_URL + " so cannot connect to OpenShift Online!");
         }
-        Config config = new ConfigBuilder().withMasterUrl(openShiftApiUrl).withOauthToken(openshiftToken).build();
+        Config config = new ConfigBuilder().withMasterUrl(openShiftApiUrl).withOauthToken(openshiftToken).
+                // TODO until we figure out the trust thing lets ignore warnings
+                withTrustCerts(true).
+                build();
         return new DefaultKubernetesClient(config);
     }
 

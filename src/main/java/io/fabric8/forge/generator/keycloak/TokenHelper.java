@@ -22,9 +22,7 @@ import org.jboss.forge.addon.ui.context.UIContext;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
 import java.util.List;
-import java.util.RandomAccess;
 
 /**
  */

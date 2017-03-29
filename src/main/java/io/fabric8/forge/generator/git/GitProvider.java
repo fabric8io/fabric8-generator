@@ -49,7 +49,9 @@ public abstract class GitProvider {
         if (Configuration.isOnPremise()) {
             // check for gogs / gitlab providers based on available services in kubernetes/openshift
             KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
-            String namespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetesClient);
+            // TODO should we pass this into the wizard as a parameter?
+            String createInNamespace = null;
+            String namespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetesClient, createInNamespace);
 
             if (hasService(kubernetesClient, namespace, ServiceNames.GOGS)) {
                 answer.add(new GogsProvider());

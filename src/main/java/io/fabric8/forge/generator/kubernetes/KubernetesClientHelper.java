@@ -32,7 +32,6 @@ import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.User;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
-import io.fabric8.utils.Systems;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +116,10 @@ public class KubernetesClientHelper {
     /**
      * Returns the namespace used to discover services like gogs and gitlab when on premise
      */
-    public static String getDiscoveryNamespace(KubernetesClient kubernetesClient) {
+    public static String getDiscoveryNamespace(KubernetesClient kubernetesClient, String createInNamespace) {
+        if (Strings.isNotBlank(createInNamespace)) {
+            return createInNamespace;
+        }
         String namespace = System.getenv(EnvironmentVariables.NAMESPACE);
         if (Strings.isNotBlank(namespace)) {
             return namespace;

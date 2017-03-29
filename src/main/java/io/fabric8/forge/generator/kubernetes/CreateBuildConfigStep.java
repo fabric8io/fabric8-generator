@@ -158,7 +158,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         SortedSet<String> namespaces = new TreeSet<>();
 
         KubernetesClient kubernetes = getKubernetesClient();
-        String namespace = kubernetes.getNamespace();
         OpenShiftClient openshiftClient = KubernetesClientHelper.getOpenShiftClientOrNull(kubernetes);
         if (openshiftClient != null) {
             // It is preferable to iterate on the list of projects as regular user with the 'basic-role' bound
@@ -247,7 +246,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
 
         if (addCI) {
-            String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes);
+            String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes, namespace);
             String jenkinsUrl;
             try {
                 jenkinsUrl = KubernetesHelper.getServiceURL(kubernetes, ServiceNames.JENKINS, discoveryNamespace, "https", true);

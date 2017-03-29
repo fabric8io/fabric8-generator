@@ -10,7 +10,7 @@
 
   <groupId>io.fabric8.forge</groupId>
   <artifactId>fabric8-generator</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.8</version>
 
   <properties>
     <fabric8.version>2.2.202</fabric8.version>

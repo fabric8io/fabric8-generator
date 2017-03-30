@@ -28,6 +28,7 @@ public class CreateBuildConfigStatusDTO {
     private String namespace;
     private String buildConfigName;
     private String gitUrl;
+    private String cheStackId;
     private String organisationJenkinsJobUrl;
     private List<String> gitRepositoryNames;
     private String gitOwnerName;
@@ -35,10 +36,11 @@ public class CreateBuildConfigStatusDTO {
     public CreateBuildConfigStatusDTO() {
     }
 
-    public CreateBuildConfigStatusDTO(String namespace, String buildConfigName, String gitUrl, String organisationJenkinsJobUrl, List<String> gitRepositoryNames, String gitOwnerName) {
+    public CreateBuildConfigStatusDTO(String namespace, String buildConfigName, String gitUrl, String cheStackId, String organisationJenkinsJobUrl, List<String> gitRepositoryNames, String gitOwnerName) {
         this.namespace = namespace;
         this.buildConfigName = buildConfigName;
         this.gitUrl = gitUrl;
+        this.cheStackId = cheStackId;
         this.organisationJenkinsJobUrl = organisationJenkinsJobUrl;
         this.gitRepositoryNames = gitRepositoryNames;
         this.gitOwnerName = gitOwnerName;
@@ -50,10 +52,19 @@ public class CreateBuildConfigStatusDTO {
                 "namespace='" + namespace + '\'' +
                 ", buildConfigName='" + buildConfigName + '\'' +
                 ", gitUrl='" + gitUrl + '\'' +
+                ", cheStackId='" + cheStackId + '\'' +
                 ", organisationJenkinsJobUrl='" + organisationJenkinsJobUrl + '\'' +
                 ", gitRepositoryNames=" + gitRepositoryNames +
                 ", gitOwnerName='" + gitOwnerName + '\'' +
                 '}';
+    }
+
+    public String getCheStackId() {
+        return cheStackId;
+    }
+
+    public void setCheStackId(String cheStackId) {
+        this.cheStackId = cheStackId;
     }
 
     public String getNamespace() {

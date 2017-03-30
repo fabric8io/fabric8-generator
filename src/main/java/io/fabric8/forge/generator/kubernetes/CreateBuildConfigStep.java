@@ -101,8 +101,11 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     private static final transient Logger LOG = LoggerFactory.getLogger(CreateBuildConfigStep.class);
     protected Cache<String, List<String>> namespacesCache;
     @Inject
-    @WithAttributes(label = "Space", required = true, description = "The space to create the app")
+    @WithAttributes(label = "App Space", required = true, description = "The space to create the app")
     private UISelectOne<String> kubernetesSpace;
+    @Inject
+    @WithAttributes(label = "Jenkins Space", required = true, description = "The space running Jenkins")
+    private UISelectOne<String> jenkinsSpace;
     @Inject
     @WithAttributes(label = "Trigger build", description = "Should a build be triggered immediately after import?")
     private UIInput<Boolean> triggerBuild;
@@ -149,11 +152,29 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         if (!namespaces.isEmpty()) {
             kubernetesSpace.setDefaultValue(namespaces.get(0));
         }
+        jenkinsSpace.setValueChoices(namespaces);
+        if (!namespaces.isEmpty()) {
+            jenkinsSpace.setDefaultValue(findDefaultJenkinsSpace(namespaces));
+        }
         triggerBuild.setDefaultValue(true);
         addCIWebHooks.setDefaultValue(true);
         builder.add(kubernetesSpace);
+        builder.add(jenkinsSpace);
         builder.add(triggerBuild);
         builder.add(addCIWebHooks);
+    }
+
+    private String findDefaultJenkinsSpace(List<String> namespaces) {
+        for (String namespace : namespaces) {
+            if (namespace.endsWith("-jenkins")) {
+                return namespace;
+            }
+        }
+        if (namespaces.isEmpty()) {
+            return null;
+        } else {
+            return namespaces.get(0);
+        }
     }
 
     private List<String> loadNamespaces(String key) {
@@ -199,6 +220,10 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         Map<Object, Object> attributeMap = uiContext.getAttributeMap();
 
         String namespace = kubernetesSpace.getValue();
+        String jenkinsNamespace = jenkinsSpace.getValue();
+        if (Strings.isNullOrBlank(jenkinsNamespace)) {
+            jenkinsNamespace = namespace;
+        }
         String projectName = getProjectName(uiContext);
         GitAccount details = (GitAccount) attributeMap.get(AttributeMapKeys.GIT_ACCOUNT);
         if (details == null) {
@@ -231,6 +256,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
 
         String jenkinsJobUrl = null;
+        String cheStackId = null;
         String message = "";
         Boolean addCI = addCIWebHooks.getValue();
 
@@ -242,7 +268,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             annotations.put(Annotations.JENKINS_JOB_PATH, "" + gitOwnerName + "/" + gitRepoNameValue + "/master");
             CheStack stack = CheStackDetector.detectCheStack(uiContext, getCurrentSelectedProject(uiContext));
             if (stack != null) {
-                annotations.put(Annotations.CHE_STACK, stack.getId());
+                cheStackId = stack.getId();
+                annotations.put(Annotations.CHE_STACK, cheStackId);
             }
             if (addCI) {
                 // lets disable jenkins-syn plugin creating the BC as well to avoid possible duplicate
@@ -254,7 +281,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
 
         if (addCI) {
-            String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes, namespace);
+            String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes, jenkinsNamespace);
             String jenkinsUrl;
             try {
                 jenkinsUrl = KubernetesHelper.getServiceURL(kubernetes, ServiceNames.JENKINS, discoveryNamespace, "https", true);
@@ -315,7 +342,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
             message += ". ";
         }
-        CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, jenkinsJobUrl, gitRepoNameList, gitOwnerName);
+        CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName);
         return Results.success(message, status);
     }
 

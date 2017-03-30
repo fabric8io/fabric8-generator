@@ -146,11 +146,13 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
         String gitOwnerName = org;
         String gitUrl = "https://github.com/" + orgAndRepo + ".git";
         String repoUrl = null;
+        String gitHtmlUrl = null;
         try {
             GHRepository repository = github.createRepository(org, repo, gitRepoDescription.getValue());
             URL htmlUrl = repository.getHtmlUrl();
             if (htmlUrl != null) {
-                repoUrl = htmlUrl.toString();
+                gitHtmlUrl = htmlUrl.toString();
+                repoUrl = gitHtmlUrl;
                 gitUrl = repoUrl + ".git";
             }
             gitOwnerName = repository.getOwnerName();
@@ -182,7 +184,8 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
             LOG.error("Failed to import project to " + gitUrl + " " + e, e);
             return Results.fail("Failed to import project to " + gitUrl + ". " + e, e);
         }
-        return Results.success("Created git repository: " + repoUrl);
+        CreateGitRepoStatusDTO status = new CreateGitRepoStatusDTO(gitUrl, gitHtmlUrl, gitOwnerName, org, repo);
+        return Results.success("Created git repository: " + repoUrl, status);
     }
 
 

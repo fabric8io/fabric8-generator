@@ -227,6 +227,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         KubernetesClient kubernetes = getKubernetesClient();
 
 
+        String jenkinsJobUrl = null;
         String message = "";
         Boolean addCI = addCIWebHooks.getValue();
 
@@ -282,6 +283,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                     message += ". ";
                 }
                 message += "Created Jenkins job: " + jobUrl;
+                jenkinsJobUrl = jobUrl;
                 ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, jobUrl, oauthToken, authHeader, gitOwnerName, gitRepoPatternOrName);
             } catch (Exception e) {
                 LOG.error("Failed to create Jenkins Organisation job: " + e, e);
@@ -306,7 +308,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
             message += ". ";
         }
-        return Results.success(message);
+        CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, jenkinsJobUrl, gitRepoNameList, gitOwnerName);
+        return Results.success(message, status);
     }
 
     private void registerGitWebHook(GitAccount details, String webhookUrl, String gitOwnerName, String gitRepoName, String botSecret) throws IOException {

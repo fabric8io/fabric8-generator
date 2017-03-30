@@ -1,0 +1,106 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.fabric8.forge.generator.kubernetes;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import java.util.List;
+
+/**
+ * Results from creating a BuildConfig
+ */
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
+public class CreateBuildConfigStatusDTO {
+    private String namespace;
+    private String buildConfigName;
+    private String gitUrl;
+    private String organisationJenkinsJobUrl;
+    private List<String> gitRepositoryNames;
+    private String gitOwnerName;
+
+    public CreateBuildConfigStatusDTO() {
+    }
+
+    public CreateBuildConfigStatusDTO(String namespace, String buildConfigName, String gitUrl, String organisationJenkinsJobUrl, List<String> gitRepositoryNames, String gitOwnerName) {
+        this.namespace = namespace;
+        this.buildConfigName = buildConfigName;
+        this.gitUrl = gitUrl;
+        this.organisationJenkinsJobUrl = organisationJenkinsJobUrl;
+        this.gitRepositoryNames = gitRepositoryNames;
+        this.gitOwnerName = gitOwnerName;
+    }
+
+    @Override
+    public String toString() {
+        return "CreateBuildConfigStatusDTO{" +
+                "namespace='" + namespace + '\'' +
+                ", buildConfigName='" + buildConfigName + '\'' +
+                ", gitUrl='" + gitUrl + '\'' +
+                ", organisationJenkinsJobUrl='" + organisationJenkinsJobUrl + '\'' +
+                ", gitRepositoryNames=" + gitRepositoryNames +
+                ", gitOwnerName='" + gitOwnerName + '\'' +
+                '}';
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public String getBuildConfigName() {
+        return buildConfigName;
+    }
+
+    public void setBuildConfigName(String buildConfigName) {
+        this.buildConfigName = buildConfigName;
+    }
+
+    public String getGitUrl() {
+        return gitUrl;
+    }
+
+    public void setGitUrl(String gitUrl) {
+        this.gitUrl = gitUrl;
+    }
+
+    public String getOrganisationJenkinsJobUrl() {
+        return organisationJenkinsJobUrl;
+    }
+
+    public void setOrganisationJenkinsJobUrl(String organisationJenkinsJobUrl) {
+        this.organisationJenkinsJobUrl = organisationJenkinsJobUrl;
+    }
+
+    public List<String> getGitRepositoryNames() {
+        return gitRepositoryNames;
+    }
+
+    public void setGitRepositoryNames(List<String> gitRepositoryNames) {
+        this.gitRepositoryNames = gitRepositoryNames;
+    }
+
+    public String getGitOwnerName() {
+        return gitOwnerName;
+    }
+
+    public void setGitOwnerName(String gitOwnerName) {
+        this.gitOwnerName = gitOwnerName;
+    }
+}

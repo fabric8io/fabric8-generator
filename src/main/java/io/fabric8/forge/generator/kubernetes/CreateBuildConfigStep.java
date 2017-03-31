@@ -112,7 +112,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     @WithAttributes(label = "Organisation", required = true, description = "The organisation")
     private UISelectOne<String> kubernetesSpace;
     @Inject
-    @WithAttributes(label = "Space", required = true, description = "The space running Jenkins")
+    @WithAttributes(label = "Space", description = "The space running Jenkins")
     private UISelectOne<SpaceDTO> labelSpace;
     @Inject
     @WithAttributes(label = "Jenkins Space", required = true, description = "The space running Jenkins")
@@ -200,9 +200,12 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         List<SpaceDTO> answer = new ArrayList<>();
         if (namespace != null) {
             try {
-                SortedSet<Space> spaces = Spaces.load(kubernetesClient, namespace).getSpaceSet();
-                for (Space space : spaces) {
-                    answer.add(new SpaceDTO(space.getName(), space.getName()));
+                Spaces spacesValue = Spaces.load(kubernetesClient, namespace);
+                if (spacesValue != null) {
+                    SortedSet<Space> spaces = spacesValue.getSpaceSet();
+                    for (Space space : spaces) {
+                        answer.add(new SpaceDTO(space.getName(), space.getName()));
+                    }
                 }
             } catch (Exception e) {
                 LOG.warn("Failed to load spaces: " + e, e);

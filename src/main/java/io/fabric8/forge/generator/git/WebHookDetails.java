@@ -22,13 +22,13 @@ import java.net.URL;
 /**
  */
 public class WebHookDetails {
-    private final String organisation;
     private final String repositoryName;
     private final String webhookUrl;
     private final String secret;
+    private String gitOwnerName;
 
-    public WebHookDetails(String organisation, String repositoryName, String webhookUrl, String secret) {
-        this.organisation = organisation;
+    public WebHookDetails(String gitOwnerName, String repositoryName, String webhookUrl, String secret) {
+        this.gitOwnerName = gitOwnerName;
         this.repositoryName = repositoryName;
         this.webhookUrl = webhookUrl;
         this.secret = secret;
@@ -37,7 +37,7 @@ public class WebHookDetails {
     @Override
     public String toString() {
         return "WebHookDetails{" +
-                "organisation='" + organisation + '\'' +
+                "gitOwnerName='" + gitOwnerName + '\'' +
                 ", repositoryName='" + repositoryName + '\'' +
                 ", webhookUrl='" + webhookUrl + '\'' +
                 ", secret='" + secret + '\'' +
@@ -55,12 +55,16 @@ public class WebHookDetails {
     public URL getWebhookURL() throws MalformedURLException {
         return new URL(webhookUrl);
     }
-
-    public String getOrganisation() {
-        return organisation;
-    }
-
+    
     public String getRepositoryName() {
         return repositoryName;
+    }
+
+    public String getGitOwnerName() {
+        return gitOwnerName;
+    }
+
+    public void setGitOwnerName(String gitOwnerName) {
+        this.gitOwnerName = gitOwnerName;
     }
 }

@@ -22,6 +22,7 @@ import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
+import io.fabric8.utils.URLUtils;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.input.UIInput;
@@ -34,8 +35,12 @@ import org.kohsuke.github.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.MediaType;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -195,11 +200,57 @@ public class GitHubFacade {
     }
 
     public void createWebHook(WebHookDetails webhook) throws IOException {
-        String orgName = webhook.getOrganisation();
         String repoName = webhook.getRepositoryName();
+/*
+        String orgName = webhook.getOrganisation();
         GHRepository repository = github.getRepository(orgName + "/" + repoName);
         repository.createWebHook(webhook.getWebhookURL());
+*/
 
+        registerGitWebHook(details, webhook.getWebhookUrl(), webhook.getGitOwnerName(), repoName, webhook.getSecret());
     }
+
+    private void registerGitWebHook(GitAccount details, String webhookUrl, String gitOwnerName, String gitRepoName, String botSecret) throws IOException {
+
+        // TODO move this logic into the GitProvider!!!
+        String body = "{\"name\": \"web\",\"active\": true,\"events\": [\"*\"],\"config\": {\"url\": \"" + webhookUrl + "\",\"insecure_ssl\":\"1\"," +
+                "\"content_type\": \"json\",\"secret\":\"" + botSecret + "\"}}";
+
+        String authHeader = details.mandatoryAuthHeader();
+        String createWebHookUrl = URLUtils.pathJoin("https://api.github.com/repos/", gitOwnerName, gitRepoName, "/hooks");
+
+        // JAX-RS doesn't work so lets use trusty java.net.URL instead ;)
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(createWebHookUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
+            connection.setRequestProperty("Content-Type", MediaType.APPLICATION_JSON);
+            connection.setRequestProperty("Authorization", authHeader);
+            connection.setDoOutput(true);
+
+            OutputStreamWriter out = new OutputStreamWriter(
+                    connection.getOutputStream());
+            out.write(body);
+
+            out.close();
+            int status = connection.getResponseCode();
+            String message = connection.getResponseMessage();
+            LOG.info("Got response code from github " + createWebHookUrl + " status: " + status + " message: " + message);
+            if (status < 200 || status >= 300) {
+                LOG.error("Failed to create the github web hook at: " + createWebHookUrl + ". Status: " + status + " message: " + message);
+                throw new IllegalStateException("Failed to create the github web hook at: " + createWebHookUrl + ". Status: " + status + " message: " + message);
+            }
+        } catch (Exception e) {
+            LOG.error("Failed to create the github web hook at: " + createWebHookUrl + ". " + e, e);
+            throw e;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
 
 }

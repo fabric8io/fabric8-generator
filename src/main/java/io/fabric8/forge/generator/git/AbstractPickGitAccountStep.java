@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.util.List;
 
+import static io.fabric8.forge.generator.git.GitProvider.pickDefaultGitProvider;
+
 /**
  */
 public abstract class AbstractPickGitAccountStep extends AbstractGitCommand implements UIWizardStep {
@@ -60,23 +62,17 @@ public abstract class AbstractPickGitAccountStep extends AbstractGitCommand impl
         List<GitProvider> gitServices = gitProviderCache.computeIfAbsent(key, k -> GitProvider.loadGitProviders());
         int size = gitServices.size();
         if (size > 0) {
-            gitProvider.setDefaultValue(gitServices.get(0));
+            gitProvider.setDefaultValue(pickDefaultGitProvider(gitServices));
         }
         if (size > 1) {
             gitProvider.setValueChoices(gitServices);
-            gitProvider.setItemLabelConverter(new Converter<GitProvider, String>() {
-                @Override
-                public String convert(GitProvider gitProvider) {
-                    return gitProvider.getName();
-                }
-            });
+            gitProvider.setItemLabelConverter(gitProvider -> gitProvider.getName());
             builder.add(gitProvider);
         }
     }
 
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
-        UICommand currentCommand = context.getCurrentCommand();
         NavigationResultBuilder builder = NavigationResultBuilder.create();
         addNextSteps(builder);
         registerAttributes(context.getUIContext());

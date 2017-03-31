@@ -65,10 +65,10 @@ public class GogsProvider extends GitProvider {
 
     @Override
     public void registerWebHook(GitAccount details, WebHookDetails webhook) {
-        // TODO
+        System.out.println("TODO - register webhook at " + webhook.getWebhookUrl());
+        
 /*
         getGitFacade().registerWebHook(WebHookDetails webhook);
 */
-
     }
 }

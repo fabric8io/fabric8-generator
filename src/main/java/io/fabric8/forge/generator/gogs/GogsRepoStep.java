@@ -14,19 +14,24 @@ import io.fabric8.forge.generator.git.AbstractGitRepoStep;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.forge.generator.git.GitSecretNames;
+import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.repo.git.RepositoryDTO;
 import io.fabric8.utils.Strings;
+import io.fabric8.utils.URLUtils;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
+import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
+import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
+import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +42,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ACCOUNT;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ORGANISATION;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_OWNER_NAME;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_PROVIDER;
+import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAME;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_URL;
 
 /**
@@ -123,6 +133,13 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
     }
 
     @Override
+    public NavigationResult next(UINavigationContext context) throws Exception {
+        NavigationResultBuilder builder = NavigationResultBuilder.create();
+        builder.add(CreateBuildConfigStep.class);
+        return builder.build();
+    }
+
+    @Override
     public Result execute(UIExecutionContext context) throws Exception {
         if (gogs == null) {
             return Results.fail("No gogs account setup");
@@ -138,7 +155,7 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
             return Results.fail("No project directory exists! " + basedir);
         }
 
-        String gitUrl = "https://gogs/" + org + "/" + repo + ".git";
+        String gitUrl = URLUtils.pathJoin(gogs.getAddress(), org, repo + ".git");
         try {
             RepositoryDTO repository = gogs.createRepository(org, repo, gitRepoDescription.getValue());
             String cloneUrl = repository.getCloneUrl();
@@ -156,7 +173,14 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
         }
 
         LOG.info("Created gogs repository: " + gitUrl);
+        String gitOwnerName = org;
+
         uiContext.getAttributeMap().put(GIT_URL, gitUrl);
+        uiContext.getAttributeMap().put(GIT_OWNER_NAME, gitOwnerName);
+        uiContext.getAttributeMap().put(GIT_ORGANISATION, org);
+        uiContext.getAttributeMap().put(GIT_REPO_NAME, repo);
+        uiContext.getAttributeMap().put(GIT_ACCOUNT, gogs.getDetails());
+        uiContext.getAttributeMap().put(GIT_PROVIDER, new GogsProvider());
 
         Result result = updateGitURLInJenkinsfile(basedir, gitUrl);
         if (result != null) {

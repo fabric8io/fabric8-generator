@@ -27,6 +27,7 @@ import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
+import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
 import io.fabric8.forge.generator.pipeline.PipelineDTO;
 import io.fabric8.kubernetes.api.Controller;
@@ -359,34 +360,37 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             String webhookUrl = URLUtils.pathJoin(jenkinsUrl, "/github-webhook/");
 
 
-            try {
-                ensureJenkinsCDCredentialCreated(gitOwnerName, details.tokenOrPassword(), jenkinsUrl, authHeader);
-            } catch (Exception e) {
-                LOG.error("Failed to create Jenkins CD Bot credentials: " + e, e);
-                return Results.fail("Failed to create Jenkins CD Bot credentials: " + e, e);
-            }
-
-            String gitRepoPatternOrName = gitRepoPattern;
-            if (Strings.isNullOrBlank(gitRepoPatternOrName)) {
-                gitRepoPatternOrName = Strings.join(gitRepoNameList, "|");
-            }
-            try {
-                String jobUrl = URLUtils.pathJoin(jenkinsUrl, "/job/" + gitOwnerName);
-                if (Strings.isNotBlank(message)) {
-                    message += ". ";
+            if (gitProvider.isGitHub()) {
+                try {
+                    ensureJenkinsCDCredentialCreated(gitOwnerName, details.tokenOrPassword(), jenkinsUrl, authHeader);
+                } catch (Exception e) {
+                    LOG.error("Failed to create Jenkins CD Bot credentials: " + e, e);
+                    return Results.fail("Failed to create Jenkins CD Bot credentials: " + e, e);
                 }
-                message += "Created Jenkins job: " + jobUrl;
-                jenkinsJobUrl = jobUrl;
-                ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, jobUrl, oauthToken, authHeader, gitOwnerName, gitRepoPatternOrName);
-            } catch (Exception e) {
-                LOG.error("Failed to create Jenkins Organisation job: " + e, e);
-                return Results.fail("Failed to create Jenkins Organisation job:: " + e, e);
+
+                String gitRepoPatternOrName = gitRepoPattern;
+                if (Strings.isNullOrBlank(gitRepoPatternOrName)) {
+                    gitRepoPatternOrName = Strings.join(gitRepoNameList, "|");
+                }
+                try {
+                    String jobUrl = URLUtils.pathJoin(jenkinsUrl, "/job/" + gitOwnerName);
+                    if (Strings.isNotBlank(message)) {
+                        message += ". ";
+                    }
+                    message += "Created Jenkins job: " + jobUrl;
+                    jenkinsJobUrl = jobUrl;
+                    ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, jobUrl, oauthToken, authHeader, gitOwnerName, gitRepoPatternOrName);
+                } catch (Exception e) {
+                    LOG.error("Failed to create Jenkins Organisation job: " + e, e);
+                    return Results.fail("Failed to create Jenkins Organisation job:: " + e, e);
+                }
             }
 
             for (String gitRepoName : gitRepoNameList) {
                 try {
                     try {
-                        registerGitWebHook(details, webhookUrl, gitOwnerName, gitRepoName, botSecret);
+                        gitProvider.registerWebHook(details, new WebHookDetails(gitOwnerName, gitRepoName, webhookUrl, botSecret));
+                        //registerGitWebHook(details, webhookUrl, gitOwnerName, gitRepoName, botSecret);
                     } catch (Exception e) {
                         LOG.error("Failed: " + e, e);
                         return Results.fail(e.getMessage(), e);

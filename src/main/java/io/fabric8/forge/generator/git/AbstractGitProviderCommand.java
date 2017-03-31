@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.util.List;
 
+import static io.fabric8.forge.generator.git.GitProvider.pickDefaultGitProvider;
+
 /**
  */
 public abstract class AbstractGitProviderCommand implements UIWizard {
@@ -64,7 +66,7 @@ public abstract class AbstractGitProviderCommand implements UIWizard {
         });
 
         if (!gitProviders.isEmpty()) {
-            gitProvider.setDefaultValue(gitProviders.get(0));
+            gitProvider.setDefaultValue(pickDefaultGitProvider(this.gitProviders));
         }
     }
 

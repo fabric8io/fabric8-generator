@@ -77,11 +77,29 @@ public abstract class GitProvider {
         }
     }
 
+    public static GitProvider pickDefaultGitProvider(List<GitProvider> gitProviders) {
+        if (Configuration.isOnPremise()) {
+            for (GitProvider provider : gitProviders) {
+                if (!provider.isGitHub()) {
+                    return provider;
+                }
+            }
+        }
+        if (gitProviders.isEmpty()) {
+            return null;
+        }
+        return gitProviders.get(0);
+    }
+
     @Override
     public String toString() {
         return "GitProvider{" +
                 "name='" + name + '\'' +
                 '}';
+    }
+
+    public boolean isGitHub() {
+        return "github".equals(getName());
     }
 
     public String getName() {

@@ -22,8 +22,9 @@ import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.repo.git.CreateRepositoryDTO;
-import io.fabric8.repo.git.GitRepoClient;
+import io.fabric8.repo.git.GitRepoClientSupport;
 import io.fabric8.repo.git.RepositoryDTO;
+import io.fabric8.repo.git.resteasy.ResteasyGitRepoClient;
 import io.fabric8.utils.Strings;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
@@ -44,7 +45,8 @@ import static io.fabric8.forge.generator.pipeline.JenkinsPipelineLibrary.getSyst
 public class GogsFacade {
     private static final transient Logger LOG = LoggerFactory.getLogger(GogsFacade.class);
     private final GitAccount details;
-    private GitRepoClient gogs;
+    private final String address;
+    private GitRepoClientSupport gogs;
 
 
     public GogsFacade() {
@@ -57,14 +59,18 @@ public class GogsFacade {
         String username = details.getUsername();
         String password = details.getPassword();
 
-        String address = getSystemPropertyOrDefault(EnvironmentVariables.GOGS_URL, "http://gogs");
+        this.address = getSystemPropertyOrDefault(EnvironmentVariables.GOGS_URL, "http://gogs");
         LOG.info("Connecting to gogs via url: " + address);
 
         try {
-            this.gogs = new GitRepoClient(address, username, password);
+            this.gogs = new ResteasyGitRepoClient(address, username, password);
         } catch (Exception e) {
             LOG.warn("Failed to create  client for user " + details.getUsername() + ". " + e, e);
         }
+    }
+
+    public String getAddress() {
+        return address;
     }
 
     public Collection<GitOrganisationDTO> loadOrganisations(UIBuilder builder) {
@@ -73,7 +79,7 @@ public class GogsFacade {
         if (Strings.isNotBlank(username)) {
             organisations.add(new GitOrganisationDTO(username));
         }
-        GitRepoClient gogs = this.gogs;
+        GitRepoClientSupport gogs = this.gogs;
         if (gogs != null) {
 /*
             try {
@@ -98,7 +104,7 @@ public class GogsFacade {
 
     public void validateRepositoryName(UIInput<String> input, UIValidationContext context, String orgName,
                                        String repoName) {
-        GitRepoClient gogs = this.gogs;
+        GitRepoClientSupport gogs = this.gogs;
         if (gogs != null) {
             try {
                 RepositoryDTO repository = gogs.getRepository(orgName, repoName);

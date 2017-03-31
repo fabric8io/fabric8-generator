@@ -28,13 +28,18 @@ import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
+import io.fabric8.forge.generator.pipeline.PipelineDTO;
+import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.ServiceNames;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceList;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretList;
+import io.fabric8.kubernetes.api.spaces.Space;
+import io.fabric8.kubernetes.api.spaces.Spaces;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.ProjectList;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -42,6 +47,7 @@ import io.fabric8.utils.DomHelper;
 import io.fabric8.utils.Strings;
 import io.fabric8.utils.URLUtils;
 import org.infinispan.Cache;
+import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.command.UICommand;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
@@ -91,6 +97,7 @@ import java.util.function.Function;
 
 import static io.fabric8.forge.generator.kubernetes.Base64Helper.base64decode;
 import static io.fabric8.project.support.BuildConfigHelper.createAndApplyBuildConfig;
+import static io.fabric8.project.support.BuildConfigHelper.createBuildConfig;
 
 /**
  * Creates the BuildConfig in OpenShift/Kubernetes so that the Jenkins build will be created
@@ -100,9 +107,13 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
     private static final transient Logger LOG = LoggerFactory.getLogger(CreateBuildConfigStep.class);
     protected Cache<String, List<String>> namespacesCache;
+    protected Cache<String, CachedSpaces> spacesCache;
     @Inject
-    @WithAttributes(label = "App Space", required = true, description = "The space to create the app")
+    @WithAttributes(label = "Organisation", required = true, description = "The organisation")
     private UISelectOne<String> kubernetesSpace;
+    @Inject
+    @WithAttributes(label = "Space", required = true, description = "The space running Jenkins")
+    private UISelectOne<SpaceDTO> labelSpace;
     @Inject
     @WithAttributes(label = "Jenkins Space", required = true, description = "The space running Jenkins")
     private UISelectOne<String> jenkinsSpace;
@@ -145,6 +156,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             this.kubernetesClient = KubernetesClientHelper.createKubernetesClientForSSO(builder.getUIContext());
         }
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
+        this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);
         final String key = KubernetesClientHelper.getUserCacheKey();
         List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> loadNamespaces(key));
 
@@ -156,12 +168,47 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         if (!namespaces.isEmpty()) {
             jenkinsSpace.setDefaultValue(findDefaultJenkinsSpace(namespaces));
         }
+
+        labelSpace.setValueChoices(() -> loadCachedSpaces(key));
+        labelSpace.setItemLabelConverter(value -> value.getLabel());
+
         triggerBuild.setDefaultValue(true);
         addCIWebHooks.setDefaultValue(true);
-        builder.add(kubernetesSpace);
-        builder.add(jenkinsSpace);
+
+        if (namespaces.size() > 1) {
+            builder.add(kubernetesSpace);
+        }
+        builder.add(labelSpace);
+        if (namespaces.size() > 1) {
+            builder.add(jenkinsSpace);
+        }
         builder.add(triggerBuild);
         builder.add(addCIWebHooks);
+    }
+
+    private List<SpaceDTO> loadCachedSpaces(String key) {
+        String namespace = kubernetesSpace.getValue();
+        CachedSpaces cachedSpaces = spacesCache.computeIfAbsent(key, k -> new CachedSpaces(namespace, loadSpaces(namespace)));
+        if (!cachedSpaces.getNamespace().equals(namespace)) {
+            cachedSpaces.setNamespace(namespace);
+            cachedSpaces.setSpaces(loadSpaces(namespace));
+        }
+        return cachedSpaces.getSpaces();
+    }
+
+    private List<SpaceDTO> loadSpaces(String namespace) {
+        List<SpaceDTO> answer = new ArrayList<>();
+        if (namespace != null) {
+            try {
+                SortedSet<Space> spaces = Spaces.load(kubernetesClient, namespace).getSpaceSet();
+                for (Space space : spaces) {
+                    answer.add(new SpaceDTO(space.getName(), space.getName()));
+                }
+            } catch (Exception e) {
+                LOG.warn("Failed to load spaces: " + e, e);
+            }
+        }
+        return answer;
     }
 
     private String findDefaultJenkinsSpace(List<String> namespaces) {
@@ -276,7 +323,16 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 annotations.put("jenkins.openshift.org/disable-sync-create-on", "jenkins");
             }
 
-            createAndApplyBuildConfig(kubernetes, namespace, projectName, gitUrl, annotations);
+            BuildConfig buildConfig = createBuildConfig(kubernetesClient, namespace, projectName, gitUrl, annotations);
+            SpaceDTO spaceDTO = labelSpace.getValue();
+            if (spaceDTO != null) {
+                String spaceId = spaceDTO.getId();
+                KubernetesHelper.getOrCreateLabels(buildConfig).put("space", spaceId);
+            }
+            Controller controller = new Controller(kubernetesClient);
+            controller.setNamespace(namespace);
+            controller.applyBuildConfig(buildConfig, "from project " + projectName);
+
             message += "Created OpenShift BuildConfig " + namespace + "/" + projectName;
         }
 

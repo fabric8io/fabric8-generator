@@ -14,19 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator.cache;
+package io.fabric8.forge.generator.kubernetes;
+
+import java.util.List;
 
 /**
  */
-public class CacheNames {
-    public static final String USER_NAMESPACES = "user-namespaces";
-    public static final String USER_SPACES = "user-spaces";
+public class CachedSpaces {
+    private String namespace;
+    private List<SpaceDTO> spaces;
 
-    public static final String GITHUB_ACCOUNT_FROM_SECRET = "github-account-from-secret";
-    public static final String GITHUB_ORGANISATIONS = "github-organisations";
-    public static final String GITHUB_REPOSITORIES_FOR_ORGANISATION = "github-repositories-for-organisation";
+    public CachedSpaces(String namespace, List<SpaceDTO> spaces) {
+        this.namespace = namespace;
+        this.spaces = spaces;
+    }
 
-    public static final String GOGS_ACCOUNT_FROM_SECRET = "gogs-account-from-secret";
-    public static final String GOGS_ORGANISATIONS = "gogs-organisations";
-    public static final String GIT_PROVIDERS = "git-providers";
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public List<SpaceDTO> getSpaces() {
+        return spaces;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public void setSpaces(List<SpaceDTO> spaces) {
+        this.spaces = spaces;
+    }
 }

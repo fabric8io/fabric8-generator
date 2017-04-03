@@ -16,10 +16,15 @@
  */
 package io.fabric8.forge.generator.gogs;
 
+import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.EnvironmentVariables;
 import io.fabric8.forge.generator.git.EnvironmentVariablePrefixes;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
+import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
+import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.api.ServiceNames;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.repo.git.CreateRepositoryDTO;
 import io.fabric8.repo.git.GitRepoClientSupport;
@@ -48,7 +53,6 @@ public class GogsFacade {
     private final String address;
     private GitRepoClientSupport gogs;
 
-
     public GogsFacade() {
         this(GitAccount.createViaEnvironmentVariables(EnvironmentVariablePrefixes.GOGS));
     }
@@ -59,7 +63,19 @@ public class GogsFacade {
         String username = details.getUsername();
         String password = details.getPassword();
 
-        this.address = getSystemPropertyOrDefault(EnvironmentVariables.GOGS_URL, "http://gogs");
+        String gogsAddress = null;
+        if (Configuration.isOnPremise()) {
+            KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
+            // TODO read from the current command maybe?
+            String namespace = kubernetesClient.getNamespace();
+            if (Strings.isNotBlank(namespace)) {
+                gogsAddress = KubernetesHelper.getServiceURL(kubernetesClient, ServiceNames.GOGS, namespace, "http", true);
+            }
+        }
+        if (Strings.isNullOrBlank(gogsAddress)) {
+            gogsAddress = getSystemPropertyOrDefault(EnvironmentVariables.GOGS_URL, "http://gogs");
+        }
+        this.address = gogsAddress;
         LOG.info("Connecting to gogs via url: " + address);
 
         try {

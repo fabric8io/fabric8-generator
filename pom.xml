@@ -13,6 +13,7 @@
 
   <properties>
     <fabric8.version>2.2.209</fabric8.version>
+    <fabric8.maven.plugin.version>3.3.3</fabric8.maven.plugin.version>
 
     <version.furnace>2.25.2.Final</version.furnace>
     <version.forge>3.6.0.Final</version.forge>
@@ -63,8 +64,18 @@
 
   <repositories>
     <repository>
+      <id>central.maven.org</id>
+      <url>http://central.maven.org/maven2</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
       <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
+      <url>http://repo.jenkins-ci.org/public</url>
     </repository>
     <repository>
       <id>jboss-public-repo</id>
@@ -81,6 +92,14 @@
 
   <build>
     <finalName>fabric8-generator</finalName>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
     <pluginManagement>
       <plugins>
         <plugin>

@@ -81,7 +81,7 @@ public class CheStackDetector {
         return CheStack.JavaCentOS;
     }
 
-    protected static Document parseXmlFile(File pomFile) throws ParserConfigurationException, SAXException, IOException {
+    public static Document parseXmlFile(File pomFile) throws ParserConfigurationException, SAXException, IOException {
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         return documentBuilder.parse(pomFile);
     }

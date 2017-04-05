@@ -107,6 +107,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     protected static final String GITHUB_SCM_NAVIGATOR_ELEMENT = "org.jenkinsci.plugins.github__branch__source.GitHubSCMNavigator";
 
     private static final transient Logger LOG = LoggerFactory.getLogger(CreateBuildConfigStep.class);
+    public static final String JENKINS_NAMESPACE_SUFFIX = "-jenkins";
     protected Cache<String, List<String>> namespacesCache;
     protected Cache<String, CachedSpaces> spacesCache;
     @Inject
@@ -127,6 +128,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     @Inject
     private CacheFacade cacheManager;
     private KubernetesClient kubernetesClient;
+    private int retryTriggerBuildCount = 5;
 
     /**
      * Combines the job patterns.
@@ -155,6 +157,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     public void initializeUI(final UIBuilder builder) throws Exception {
         if (!Configuration.isOnPremise()) {
             this.kubernetesClient = KubernetesClientHelper.createKubernetesClientForSSO(builder.getUIContext());
+        }  else {
+            this.kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
         }
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);
@@ -163,7 +167,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
         kubernetesSpace.setValueChoices(namespaces);
         if (!namespaces.isEmpty()) {
-            kubernetesSpace.setDefaultValue(namespaces.get(0));
+            kubernetesSpace.setDefaultValue(findDefaultNamespace(namespaces));
         }
         jenkinsSpace.setValueChoices(namespaces);
         if (!namespaces.isEmpty()) {
@@ -185,6 +189,30 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
         builder.add(triggerBuild);
         builder.add(addCIWebHooks);
+    }
+
+    protected String findDefaultNamespace(List<String> namespaces) {
+        String jenkinsNamespace = findDefaultJenkinsSpace(namespaces);
+        if (jenkinsNamespace != null && jenkinsNamespace.endsWith(JENKINS_NAMESPACE_SUFFIX)) {
+            String namespace = jenkinsNamespace.substring(0, jenkinsNamespace.length() - JENKINS_NAMESPACE_SUFFIX.length());
+            if (namespaces.contains(namespace)) {
+                return namespace;
+            }
+        }
+        return namespaces.get(0);
+    }
+
+    private String findDefaultJenkinsSpace(List<String> namespaces) {
+        for (String namespace : namespaces) {
+            if (namespace.endsWith(JENKINS_NAMESPACE_SUFFIX)) {
+                return namespace;
+            }
+        }
+        if (namespaces.isEmpty()) {
+            return null;
+        } else {
+            return namespaces.get(0);
+        }
     }
 
     private List<SpaceDTO> loadCachedSpaces(String key) {
@@ -213,19 +241,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
         }
         return answer;
-    }
-
-    private String findDefaultJenkinsSpace(List<String> namespaces) {
-        for (String namespace : namespaces) {
-            if (namespace.endsWith("-jenkins")) {
-                return namespace;
-            }
-        }
-        if (namespaces.isEmpty()) {
-            return null;
-        } else {
-            return namespaces.get(0);
-        }
     }
 
     private List<String> loadNamespaces(String key) {
@@ -393,21 +408,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 // lets trigger the build
                 OpenShiftClient openShiftClient = controller.getOpenShiftClientOrNull();
                 if (openShiftClient != null) {
-                    BuildRequest request = new BuildRequestBuilder().
-                            withNewMetadata().withName(projectName).endMetadata().
-                            addNewTriggeredBy().withMessage("Manually triggered").endTriggeredBy().
-                            build();
-                    try {
-                        Build build = openShiftClient.buildConfigs().inNamespace(namespace).withName(projectName).instantiate(request);
-                        if (build != null) {
-                            triggeredBuildName = KubernetesHelper.getName(build);
-                            LOG.info("Triggered build " + triggeredBuildName);
-                        } else {
-                            LOG.error("Failed to trigger build for " + namespace + "/" + projectName + " du to: no Build returned");
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Failed to trigger build for " + namespace + "/" + projectName + " due to: " + e, e);
-                    }
+                    triggerBuild(openShiftClient, namespace, projectName);
                 }
             }
 
@@ -432,6 +433,35 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
         CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName);
         return Results.success(message, status);
+    }
+
+    protected void triggerBuild(OpenShiftClient openShiftClient, String namespace, String projectName) {
+        for (int i = 0; i < retryTriggerBuildCount; i++) {
+            if (i > 0) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+            String triggeredBuildName;
+            BuildRequest request = new BuildRequestBuilder().
+                    withNewMetadata().withName(projectName).endMetadata().
+                    addNewTriggeredBy().withMessage("Manually triggered").endTriggeredBy().
+                    build();
+            try {
+                Build build = openShiftClient.buildConfigs().inNamespace(namespace).withName(projectName).instantiate(request);
+                if (build != null) {
+                    triggeredBuildName = KubernetesHelper.getName(build);
+                    LOG.info("Triggered build " + triggeredBuildName);
+                    return;
+                } else {
+                    LOG.error("Failed to trigger build for " + namespace + "/" + projectName + " du to: no Build returned");
+                }
+            } catch (Exception e) {
+                LOG.error("Failed to trigger build for " + namespace + "/" + projectName + " due to: " + e, e);
+            }
+        }
     }
 
     private void registerGitWebHook(GitAccount details, String webhookUrl, String gitOwnerName, String gitRepoName, String botSecret) throws IOException {

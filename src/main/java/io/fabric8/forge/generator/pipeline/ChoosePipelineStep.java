@@ -19,7 +19,9 @@ import io.fabric8.devops.ProjectConfig;
 import io.fabric8.devops.ProjectConfigs;
 import io.fabric8.forge.addon.utils.CommandHelpers;
 import io.fabric8.forge.addon.utils.StopWatch;
+import io.fabric8.forge.generator.versions.VersionHelper;
 import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.utils.DomHelper;
 import io.fabric8.utils.Files;
 import io.fabric8.utils.Filter;
 import io.fabric8.utils.IOHelpers;
@@ -42,9 +44,15 @@ import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +60,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static io.fabric8.forge.generator.che.CheStackDetector.parseXmlFile;
 import static io.fabric8.kubernetes.api.KubernetesHelper.loadYaml;
 
 public class ChoosePipelineStep extends AbstractProjectOverviewCommand implements UIWizardStep {
@@ -150,18 +159,19 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         context.getUIContext().getAttributeMap().put("hasJenkinsFile", hasJenkinsFile);
         PipelineDTO value = pipeline.getValue();
         context.getUIContext().getAttributeMap().put("selectedPipeline", value);
-        if (value != null) {
+        File basedir = getSelectionFolder(uiContext);
+        StatusDTO status = new StatusDTO();
+        if (basedir == null || !basedir.isDirectory()) {
+            status.warning(LOG, "Cannot copy the pipeline to the project as no basedir!");
+        } else {
+            if (value != null) {
             String pipelinePath = value.getValue();
-            File basedir = getSelectionFolder(uiContext);
-            if (basedir == null || !basedir.isDirectory()) {
-                LOG.warn("Cannot copy the pipeline to the project as no basedir!");
-            } else {
                 if (Strings.isNullOrBlank(pipelinePath)) {
-                    LOG.warn("Cannot copy the pipeline to the project as the pipeline has no Jenkinsfile configured!");
+                    status.warning(LOG, "Cannot copy the pipeline to the project as the pipeline has no Jenkinsfile configured!");
                 } else {
                     String pipelineText = getPipelineContent(pipelinePath, context.getUIContext());
                     if (Strings.isNullOrBlank(pipelineText)) {
-                        LOG.warn("Cannot copy the pipeline to the project as no pipeline text could be loaded!");
+                        status.warning(LOG, "Cannot copy the pipeline to the project as no pipeline text could be loaded!");
                     } else {
                         File newFile = new File(basedir, ProjectConfigs.LOCAL_FLOW_FILE_NAME);
                         Files.writeToFile(newFile, pipelineText.getBytes());
@@ -169,8 +179,58 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                     }
                 }
             }
+            updatePomVersions(uiContext, status, basedir);
         }
-        return Results.success();
+        return Results.success("Added Jenkinsfile to project", status);
+    }
+
+
+    private void updatePomVersions(UIContext uiContext, StatusDTO status, File basedir) {
+        File pom = new File(basedir, "pom.xml");
+        if (pom.exists() && pom.isFile()) {
+            Document doc;
+            try {
+                doc = parseXmlFile(pom);
+            } catch (Exception e) {
+                status.warning(LOG, "Cannot parse pom.xml: " + e, e);
+                return;
+            }
+            Element properties = DomHelper.firstChild(doc.getDocumentElement(), "properties");
+            if (properties != null) {
+                boolean update = false;
+                if (updateFirstChild(properties, "fabric8.version", VersionHelper.fabric8Version())) {
+                    update = true;
+                }
+                if (updateFirstChild(properties, "fabric8.maven.plugin.version", VersionHelper.fabric8MavenPluginVersion())) {
+                    update = true;
+                }
+                if (updateFirstChild(properties, "fabric8-maven-plugin.version", VersionHelper.fabric8MavenPluginVersion())) {
+                    update = true;
+                }
+                if (update) {
+                    LOG.info("Updating properties of pom.xml");
+                    try {
+                        DomHelper.save(doc, pom);
+                    } catch (Exception e) {
+                        status.warning(LOG, "failed to save pom.xml: " + e, e);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean updateFirstChild(Element parentElement, String elementName, String value) {
+        if (parentElement != null) {
+            Element element = DomHelper.firstChild(parentElement, elementName);
+            if (element != null) {
+                String textContent = element.getTextContent();
+                if (textContent == null || !value.equals(textContent)) {
+                    element.setTextContent(value);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private String getPipelineContent(String flow, UIContext context) {

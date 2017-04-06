@@ -39,7 +39,7 @@ public abstract class AbstractProjectOverviewCommand extends AbstractDevToolsCom
             List<FileProcessor> processors = loadFileMatches();
             scanProject(rootFolder, processors, projectOverview, 0, 3);
         }
-        log.info("getProjectOverview took " + watch.taken());
+        log.debug("getProjectOverview took " + watch.taken());
         if (projectOverview.getBuilders().isEmpty()) {
             // lets assume maven for now!
             projectOverview.addBuilder("maven");

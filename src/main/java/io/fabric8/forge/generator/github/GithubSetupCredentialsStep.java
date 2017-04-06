@@ -52,7 +52,7 @@ public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep 
         builder.add(gitUserName);
         builder.add(gitPassword);
         builder.add(gitEmail);
-        GitAccount details = loadGitAccountFromSecret(GitSecretNames.GITHUB_SECRET_NAME);
+        GitAccount details = loadGitAccountFromSecret(builder.getUIContext(), GitSecretNames.GITHUB_SECRET_NAME);
         if (details != null) {
             setIfNotBlank(gitUserName, details.getUsername());
             setIfNotBlank(gitPassword, details.getPassword());

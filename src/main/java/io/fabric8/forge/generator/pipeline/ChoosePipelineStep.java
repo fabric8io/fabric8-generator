@@ -138,7 +138,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             builder.add(pipeline);
         }
 
-        log.info("initializeUI took " + watch.taken());
+        LOG.debug("initializeUI took " + watch.taken());
     }
 
     private boolean hasLocalJenkinsFile(UIContext context, Project project) {
@@ -208,7 +208,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                     update = true;
                 }
                 if (update) {
-                    LOG.info("Updating properties of pom.xml");
+                    LOG.debug("Updating properties of pom.xml");
                     try {
                         DomHelper.save(doc, pom);
                     } catch (Exception e) {
@@ -350,7 +350,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                 return new ArrayList<>();
             }
         } finally {
-            log.info("getPipelines took " + watch.taken());
+            LOG.debug("getPipelines took " + watch.taken());
         }
     }
 

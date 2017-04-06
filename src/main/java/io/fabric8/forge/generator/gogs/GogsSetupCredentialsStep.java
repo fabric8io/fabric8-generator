@@ -49,7 +49,7 @@ public class GogsSetupCredentialsStep extends AbstractGitSetupCredentialsStep im
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
 
-        GitAccount details = loadGitAccountFromSecret(GitSecretNames.GOGS_SECRET_NAME);
+        GitAccount details = loadGitAccountFromSecret(builder.getUIContext(), GitSecretNames.GOGS_SECRET_NAME);
         if (details != null) {
             setIfNotBlank(gitUserName, details.getUsername());
             setIfNotBlank(gitPassword, details.getPassword());

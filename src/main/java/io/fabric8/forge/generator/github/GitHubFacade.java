@@ -101,7 +101,7 @@ public class GitHubFacade {
         GitHub github = this.github;
         if (github != null) {
             try {
-                LOG.info("Loading github organisations for " + username);
+                LOG.debug("Loading github organisations for " + username);
                 Map<String, GHOrganization> map = github.getMyOrganizations();
                 if (map != null) {
                     Collection<GHOrganization> organizations = map.values();

@@ -16,6 +16,7 @@
  */
 package io.fabric8.forge.generator.kubernetes;
 
+import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.EnvironmentVariables;
 import io.fabric8.forge.generator.keycloak.KeycloakEndpoint;
 import io.fabric8.forge.generator.keycloak.TokenHelper;
@@ -42,6 +43,14 @@ import javax.ws.rs.WebApplicationException;
  */
 public class KubernetesClientHelper {
     private static final transient Logger LOG = LoggerFactory.getLogger(KubernetesClientHelper.class);
+
+    public static KubernetesClient createKubernetesClient(UIContext context) {
+        if (!Configuration.isOnPremise()) {
+            return KubernetesClientHelper.createKubernetesClientForSSO(context);
+        }  else {
+            return KubernetesClientHelper.createKubernetesClientForCurrentCluster();
+        }
+    }
 
     /**
      * Should create a kubernetes client using the current logged in users account
@@ -108,8 +117,12 @@ public class KubernetesClientHelper {
     /**
      * Returns a unique key specific to the current user request
      */
-    public static String getUserCacheKey() {
-        // TODO
+    public static String getUserCacheKey(KubernetesClient kubernetesClient) {
+        String answer = kubernetesClient.getConfiguration().getOauthToken();
+        if (Strings.isNotBlank(answer)) {
+            return answer;
+        }
+        LOG.warn("Could not find the OAuthToken to use as a user cache key!");
         return "TODO";
     }
 

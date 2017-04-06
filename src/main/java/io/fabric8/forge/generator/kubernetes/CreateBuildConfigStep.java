@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import io.fabric8.forge.generator.Annotations;
 import io.fabric8.forge.generator.AttributeMapKeys;
-import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.che.CheStack;
@@ -153,14 +152,10 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     }
 
     public void initializeUI(final UIBuilder builder) throws Exception {
-        if (!Configuration.isOnPremise()) {
-            this.kubernetesClient = KubernetesClientHelper.createKubernetesClientForSSO(builder.getUIContext());
-        }  else {
-            this.kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
-        }
+        this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);
-        final String key = KubernetesClientHelper.getUserCacheKey();
+        final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
         List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> loadNamespaces(key));
 
         kubernetesSpace.setValueChoices(namespaces);
@@ -242,7 +237,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     }
 
     private List<String> loadNamespaces(String key) {
-        LOG.info("Loading user namespaces for key " + key);
+        LOG.debug("Loading user namespaces for key " + key);
         SortedSet<String> namespaces = new TreeSet<>();
 
         KubernetesClient kubernetes = getKubernetesClient();
@@ -857,9 +852,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
 
     public KubernetesClient getKubernetesClient() {
-        if (kubernetesClient == null) {
-            kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
-        }
         return kubernetesClient;
     }
 

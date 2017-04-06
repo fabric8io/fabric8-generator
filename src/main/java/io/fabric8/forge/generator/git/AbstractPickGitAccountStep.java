@@ -20,9 +20,8 @@ import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.infinispan.Cache;
-import org.jboss.forge.addon.convert.Converter;
-import org.jboss.forge.addon.ui.command.UICommand;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -58,7 +57,8 @@ public abstract class AbstractPickGitAccountStep extends AbstractGitCommand impl
 
         this.gitProviderCache = cacheManager.getCache(CacheNames.GIT_PROVIDERS);
 
-        String key = KubernetesClientHelper.getUserCacheKey();
+        KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
+        String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
         List<GitProvider> gitServices = gitProviderCache.computeIfAbsent(key, k -> GitProvider.loadGitProviders());
         int size = gitServices.size();
         if (size > 0) {

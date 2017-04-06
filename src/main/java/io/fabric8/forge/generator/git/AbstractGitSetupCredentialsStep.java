@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.ui.context.UIBuilder;
+import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.result.Result;
 
@@ -45,8 +46,8 @@ public abstract class AbstractGitSetupCredentialsStep extends AbstractDevToolsCo
         this.accountCache = cacheManager.getCache(CacheNames.GITHUB_ACCOUNT_FROM_SECRET);
     }
 
-    protected GitAccount loadGitAccountFromSecret(String githubSecretName) {
-        kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
+    protected GitAccount loadGitAccountFromSecret(UIContext uiContext, String githubSecretName) {
+        kubernetesClient = KubernetesClientHelper.createKubernetesClient(uiContext);
         namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
         return GitAccount.loadFromSecret(kubernetesClient, namespace, githubSecretName);
     }
@@ -58,7 +59,7 @@ public abstract class AbstractGitSetupCredentialsStep extends AbstractDevToolsCo
     }
 
     protected Result storeGitAccountInSecret(GitAccount details, String githubSecretName) {
-        final String key = KubernetesClientHelper.getUserCacheKey();
+        final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
         accountCache.evict(key);
         return GitAccount.storeGitDetailsInSecret(kubernetesClient, namespace, githubSecretName, details);
     }

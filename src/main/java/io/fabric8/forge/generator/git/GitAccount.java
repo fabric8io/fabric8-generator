@@ -75,7 +75,7 @@ public class GitAccount {
         Map<String, Claim> claims = jwt.getClaims();
         String username = getClaim(claims, "preferred_username");
         String email = getClaim(claims, "email");
-        LOG.info("Loading git account from saas: username: " + username + " email: " + email);
+        LOG.debug("Loading git account from saas: username: " + username + " email: " + email);
         return new GitAccount(username, authToken, null, email);
     }
 
@@ -100,19 +100,19 @@ public class GitAccount {
         return new GitAccount(username, token, password, email);
     }
 
-    public static GitAccount loadGitDetailsFromSecret(Cache<String, GitAccount> cache, String secretName) {
-        final String key = KubernetesClientHelper.getUserCacheKey();
+    public static GitAccount loadGitDetailsFromSecret(Cache<String, GitAccount> cache, String secretName, UIContext uiContext) {
+        KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClient(uiContext);
+        final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
         return cache.computeIfAbsent(key, k -> {
-            KubernetesClient kubernetesClient = KubernetesClientHelper.createKubernetesClientForCurrentCluster();
             String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
             GitAccount details = loadFromSecret(kubernetesClient, namespace, secretName);
-            LOG.info("Loaded details: " + details + " for cache key: " + key);
+            LOG.debug("Loaded details: " + details + " for cache key: " + key);
             return details;
         });
     }
 
     public static GitAccount loadFromSecret(KubernetesClient kubernetesClient, String namespace, String secretName) {
-        LOG.info("Loading git secret from namespace " + namespace + " with name: " + secretName);
+        LOG.debug("Loading git secret from namespace " + namespace + " with name: " + secretName);
         KubernetesClientHelper.lazyCreateNamespace(kubernetesClient, namespace);
         Secret secret = kubernetesClient.secrets().inNamespace(namespace).withName(secretName).get();
         if (secret != null) {
@@ -123,7 +123,7 @@ public class GitAccount {
                 String password = Base64Helper.base64decode(data.get(GitSecretKeys.PASSWORD));
                 String email = Base64Helper.base64decode(data.get(GitSecretKeys.EMAIL));
                 GitAccount gitAccount = new GitAccount(username, token, password, email);
-                LOG.info("Found: " + gitAccount);
+                LOG.debug("Found: " + gitAccount);
                 return gitAccount;
             }
         }
@@ -137,7 +137,7 @@ public class GitAccount {
 
     public static Result storeGitDetailsInSecret(KubernetesClient kubernetesClient, String namespace, String secretName, GitAccount details) {
         boolean update = true;
-        LOG.info("Storing git account into namespace " + namespace + " with name " + secretName);
+        LOG.debug("Storing git account into namespace " + namespace + " with name " + secretName);
         KubernetesClientHelper.lazyCreateNamespace(kubernetesClient, namespace);
         Resource<Secret, DoneableSecret> resource = kubernetesClient.secrets().inNamespace(namespace)
                 .withName(secretName);

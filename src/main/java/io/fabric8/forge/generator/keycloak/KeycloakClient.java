@@ -62,9 +62,9 @@ public class KeycloakClient {
             parameter = UrlHelper.splitQuery(responseBody);
         }
         String token = parameter.get(ACCESS_TOKEN);
-        LOG.info("Token: {}", token);
+        LOG.debug("Token: {}", token);
         String scope = parameter.get(SCOPE);
-        LOG.info("Scope: {}", scope);
+        LOG.debug("Scope: {}", scope);
         return token;
     }
 

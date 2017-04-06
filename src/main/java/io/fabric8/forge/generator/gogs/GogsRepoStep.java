@@ -110,7 +110,7 @@ public class GogsRepoStep extends AbstractGitRepoStep implements UIWizardStep {
         if (details != null) {
             return new GogsFacade(details);
         } else if (Configuration.isOnPremise()) {
-            details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GOGS_SECRET_NAME);
+            details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GOGS_SECRET_NAME, context);
             return new GogsFacade(details);
         }
 

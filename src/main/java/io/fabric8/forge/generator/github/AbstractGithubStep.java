@@ -39,7 +39,7 @@ public abstract class AbstractGithubStep extends AbstractGitRepoStep {
         GitAccount details = (GitAccount) context.getAttributeMap().get(AttributeMapKeys.GIT_ACCOUNT);
         if (details == null) {
             if (Configuration.isOnPremise()) {
-                details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GITHUB_SECRET_NAME);
+                details = GitAccount.loadGitDetailsFromSecret(accountCache, GitSecretNames.GITHUB_SECRET_NAME, context);
             } else {
                 details = GitAccount.loadFromSaaS(context);
             }

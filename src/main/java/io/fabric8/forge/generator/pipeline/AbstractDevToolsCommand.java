@@ -100,7 +100,7 @@ public abstract class AbstractDevToolsCommand extends AbstractProjectCommand {
             return project;
         } finally {
             log.debug("END   getCurrentSelectedProject: on " + getProjectFactory() + " selection: " + selectedObject);
-            log.info("getCurrentSelectedProject took " + watch.taken());
+            log.debug("getCurrentSelectedProject took " + watch.taken());
         }
     }
 

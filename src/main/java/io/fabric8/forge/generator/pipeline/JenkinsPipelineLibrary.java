@@ -100,7 +100,7 @@ public class JenkinsPipelineLibrary {
             LOG.error("Failed to command remote repo " + cloneUrl + " due: " + e.getMessage(), e);
             throw new RuntimeException("Failed to command remote repo " + cloneUrl + " due: " + e.getMessage());
         } finally {
-            LOG.info("cloneRepo took " + watch.taken());
+            LOG.debug("cloneRepo took " + watch.taken());
         }
     }
 
@@ -114,7 +114,7 @@ public class JenkinsPipelineLibrary {
         } catch (Exception e) {
             LOG.error("Failed to clone jenkins workflow repo from : " + jenkinsfileLibraryGitUrl + ". " + e, e);
         } finally {
-            LOG.info("asyncCloneOrPullJenkinsWorkflows took " + watch.taken());
+            LOG.debug("asyncCloneOrPullJenkinsWorkflows took " + watch.taken());
         }
     }
 
@@ -181,7 +181,7 @@ public class JenkinsPipelineLibrary {
             }
 
             // lets trash any failed changes
-            LOG.info("Stashing local changes to the repo");
+            LOG.debug("Stashing local changes to the repo");
             boolean hasHead = true;
             try {
                 git.log().all().call();
@@ -203,10 +203,10 @@ public class JenkinsPipelineLibrary {
                 }
             }
 
-            //LOG.info("Resetting the repo");
+            //LOG.debug("Resetting the repo");
             //git.reset().setMode(ResetCommand.ResetType.HARD).call();
 
-            LOG.info("Performing a pull in git repository " + projectFolder.getCanonicalPath() + " on remote URL: " + url);
+            LOG.debug("Performing a pull in git repository " + projectFolder.getCanonicalPath() + " on remote URL: " + url);
             PullCommand pull = git.pull();
             GitUtils.configureCommand(pull, userDetails);
             pull.setRebase(true).call();
@@ -214,7 +214,7 @@ public class JenkinsPipelineLibrary {
             LOG.error("Failed to pull from the remote git repo with credentials " + cp + " due: " + e.getMessage()
                     + ". This exception is ignored.", e);
         } finally {
-            LOG.info("doPull took " + watch.taken());
+            LOG.debug("doPull took " + watch.taken());
         }
     }
 }

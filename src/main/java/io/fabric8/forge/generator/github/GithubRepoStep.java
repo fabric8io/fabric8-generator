@@ -96,7 +96,7 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
 
 
         if (gitRepository.getValue() == null) {
-            LOG.info("Setting defaultValue of gitRepository to " + projectName + " as current value is null!");
+            LOG.debug("Setting defaultValue of gitRepository to " + projectName + " as current value is null!");
             gitRepository.setDefaultValue(projectName);
         }
     }

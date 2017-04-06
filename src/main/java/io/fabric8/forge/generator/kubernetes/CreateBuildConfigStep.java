@@ -351,6 +351,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
             message += "Created OpenShift BuildConfig " + namespace + "/" + projectName;
         }
+        List<String> warnings = new ArrayList<>();
 
         if (addCI) {
             String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes, jenkinsNamespace);
@@ -415,8 +416,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                         return Results.fail(e.getMessage(), e);
                     }
                 } catch (Exception e) {
-                    LOG.error("Failed to create CI webhooks for: " + gitRepoName + ": " + e, e);
-                    return Results.fail("Failed to create CI webhooks: " + e, e);
+                    addWarning(warnings, "Failed to create CI webhooks for: " + gitRepoName + ": " + e, e);
                 }
             }
             if (!gitRepoNameList.isEmpty()) {
@@ -424,8 +424,14 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
             message += ". ";
         }
-        CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName);
+        CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName, warnings);
         return Results.success(message, status);
+    }
+
+    private void addWarning(List<String> warnings, String message, Exception e) {
+        LOG.warn(message, e);
+        // TODO add stack trace too?
+        warnings.add(message);
     }
 
     protected void triggerBuild(OpenShiftClient openShiftClient, String namespace, String projectName) {

@@ -32,11 +32,12 @@ public class CreateBuildConfigStatusDTO {
     private String organisationJenkinsJobUrl;
     private List<String> gitRepositoryNames;
     private String gitOwnerName;
+    private List<String> warnings;
 
     public CreateBuildConfigStatusDTO() {
     }
 
-    public CreateBuildConfigStatusDTO(String namespace, String buildConfigName, String gitUrl, String cheStackId, String organisationJenkinsJobUrl, List<String> gitRepositoryNames, String gitOwnerName) {
+    public CreateBuildConfigStatusDTO(String namespace, String buildConfigName, String gitUrl, String cheStackId, String organisationJenkinsJobUrl, List<String> gitRepositoryNames, String gitOwnerName, List<String> warnings) {
         this.namespace = namespace;
         this.buildConfigName = buildConfigName;
         this.gitUrl = gitUrl;
@@ -44,6 +45,7 @@ public class CreateBuildConfigStatusDTO {
         this.organisationJenkinsJobUrl = organisationJenkinsJobUrl;
         this.gitRepositoryNames = gitRepositoryNames;
         this.gitOwnerName = gitOwnerName;
+        this.warnings = warnings;
     }
 
     @Override
@@ -113,5 +115,13 @@ public class CreateBuildConfigStatusDTO {
 
     public void setGitOwnerName(String gitOwnerName) {
         this.gitOwnerName = gitOwnerName;
+    }
+
+    public List<String> getWarnings() {
+        return warnings;
+    }
+
+    public void setWarnings(List<String> warnings) {
+        this.warnings = warnings;
     }
 }

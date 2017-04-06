@@ -29,6 +29,7 @@ import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
+import io.fabric8.forge.generator.utils.WebClientHelpers;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.ServiceNames;
@@ -59,7 +60,6 @@ import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -69,8 +69,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
 import javax.ws.rs.RedirectionException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
@@ -561,7 +559,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
         LOG.info("Triggering Jenkins build: " + triggerUrl);
 
-        Client client = createClient();
+        Client client = WebClientHelpers.createClientWihtoutHostVerification();
         try {
             Response response = client.target(triggerUrl).
                     request().
@@ -588,7 +586,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     }
 
     protected JsonNode parseLastBuildJson(String authHeader, String urlText) {
-        Client client = createClient();
+        Client client = WebClientHelpers.createClientWihtoutHostVerification();
         try {
             Response response = client.target(urlText).
                     request().
@@ -662,7 +660,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
             Client client = null;
             try {
-                client = createClient();
+                client = WebClientHelpers.createClientWihtoutHostVerification();
                 response = client.target(createUrl).request().
                         header("Authorization", authHeader).
                         post(Entity.form(form), Response.class);
@@ -788,7 +786,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         for (int i = 0, retries = 2; i < retries; i++) {
             Client client = null;
             try {
-                client = createClient();
+                client = WebClientHelpers.createClientWihtoutHostVerification();
                 WebTarget target = client.target(url);
                 response = callback.apply(target);
                 int status = response.getStatus();
@@ -832,18 +830,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
     private Client createSecureClient() {
         return ClientBuilder.newClient();
-    }
-
-    private Client createClient() {
-        ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder();
-        clientBuilder.disableTrustManager();
-        clientBuilder.hostnameVerifier(new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        });
-        return clientBuilder.build();
     }
 
     /**

@@ -17,6 +17,7 @@
 package io.fabric8.forge.generator.keycloak;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.forge.generator.utils.WebClientHelpers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +69,7 @@ public class KeycloakClient {
     }
 
     private String getResponseBody(KeycloakEndpoint endpoint, String authHeader) {
-        Client client = ClientBuilder.newClient();
+        Client client = WebClientHelpers.createClientWihtoutHostVerification();
         return client.target(endpoint.toString())
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", authHeader)

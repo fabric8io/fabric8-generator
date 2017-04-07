@@ -95,7 +95,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         pipeline.setValueChoices(pipelineOptions);
         if (!pipelineOptions.isEmpty()) {
             // for now lets pick the first one but we should have a marker for the default?
-            pipeline.setDefaultValue(pipelineOptions.get(0));
+            pipeline.setDefaultValue(pipelineOptions.get(pipelineOptions.size() - 1));
 
         }
         pipeline.setItemLabelConverter(new Converter<PipelineDTO, String>() {

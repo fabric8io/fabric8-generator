@@ -408,13 +408,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
             for (String gitRepoName : gitRepoNameList) {
                 try {
-                    try {
-                        gitProvider.registerWebHook(details, new WebHookDetails(gitOwnerName, gitRepoName, webhookUrl, botSecret));
-                        //registerGitWebHook(details, webhookUrl, gitOwnerName, gitRepoName, botSecret);
-                    } catch (Exception e) {
-                        LOG.error("Failed: " + e, e);
-                        return Results.fail(e.getMessage(), e);
-                    }
+                    gitProvider.registerWebHook(details, new WebHookDetails(gitOwnerName, gitRepoName, webhookUrl, botSecret));
+                    //registerGitWebHook(details, webhookUrl, gitOwnerName, gitRepoName, botSecret);
                 } catch (Exception e) {
                     addWarning(warnings, "Failed to create CI webhooks for: " + gitRepoName + ": " + e, e);
                 }

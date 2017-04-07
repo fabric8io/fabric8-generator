@@ -31,6 +31,7 @@ import java.io.IOException;
 public class GitHubProvider extends GitProvider {
     private Boolean configuredCorrectly;
     private GitAccount details;
+    private boolean registerWebHooks = true;
 
     public GitHubProvider() {
         super("github");
@@ -68,7 +69,9 @@ public class GitHubProvider extends GitProvider {
 
     @Override
     public void registerWebHook(GitAccount details, WebHookDetails webhook) throws IOException {
-        GitHubFacade facade = new GitHubFacade(details);
-        facade.createWebHook(webhook);
+        if (registerWebHooks) {
+            GitHubFacade facade = new GitHubFacade(details);
+            facade.createWebHook(webhook);
+        }
     }
 }

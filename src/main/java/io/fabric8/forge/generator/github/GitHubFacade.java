@@ -212,6 +212,7 @@ public class GitHubFacade {
 
     private void registerGitWebHook(GitAccount details, String webhookUrl, String gitOwnerName, String gitRepoName, String botSecret) throws IOException {
 
+        LOG.info("Creating webhook at " + webhookUrl);
         // TODO move this logic into the GitProvider!!!
         String body = "{\"name\": \"web\",\"active\": true,\"events\": [\"*\"],\"config\": {\"url\": \"" + webhookUrl + "\",\"insecure_ssl\":\"1\"," +
                 "\"content_type\": \"json\",\"secret\":\"" + botSecret + "\"}}";

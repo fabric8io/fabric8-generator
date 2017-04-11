@@ -15,8 +15,8 @@
     <fabric8.version>2.2.209</fabric8.version>
     <fabric8.maven.plugin.version>3.3.3</fabric8.maven.plugin.version>
 
-    <version.furnace>2.25.2.Final</version.furnace>
-    <version.forge>3.6.0.Final</version.forge>
+    <version.furnace>2.25.4.Final</version.furnace>
+    <version.forge>3.6.1.Final</version.forge>
     <version.wildfly-swarm>2017.3.3</version.wildfly-swarm>
     <fabric8-forge.version>2.3.90</fabric8-forge.version>
     <version.vertx>1.2.1</version.vertx>

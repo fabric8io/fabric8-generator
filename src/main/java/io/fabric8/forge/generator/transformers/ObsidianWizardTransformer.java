@@ -36,7 +36,7 @@ public class ObsidianWizardTransformer implements NavigationResultTransformer {
 
     private Set<String> commandNames = new HashSet<>(Arrays.asList(
             "Obsidian: New Quickstart",
-            "Obsidian: New Project"
+            "Launchpad: New Starter Project"
     ));
 
     @Override

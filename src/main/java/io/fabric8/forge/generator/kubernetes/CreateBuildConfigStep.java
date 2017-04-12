@@ -32,13 +32,16 @@ import io.fabric8.forge.generator.utils.WebClientHelpers;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.ServiceNames;
+import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceList;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.api.spaces.Space;
 import io.fabric8.kubernetes.api.spaces.Spaces;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildRequest;
@@ -47,6 +50,7 @@ import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.ProjectList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.DomHelper;
+import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Strings;
 import io.fabric8.utils.URLUtils;
 import org.infinispan.Cache;
@@ -82,7 +86,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -324,9 +330,13 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         String message = "";
         Boolean addCI = addCIWebHooks.getValue();
         boolean isGitHubOrganisationFolder = gitProvider.isGitHub();
+        String gitToken = details.tokenOrPassword();
 
         String gitUrl = (String) attributeMap.get(AttributeMapKeys.GIT_URL);
         if (Strings.isNotBlank(gitUrl)) {
+            if (addCI && isGitHubOrganisationFolder) {
+                ensureCDGihubSecretExists(openShiftClient, namespace, gitOwnerName, gitToken);
+            }
             try {
                 BuildConfig oldBC = openShiftClient.buildConfigs().inNamespace(namespace).withName(projectName).get();
                 if (oldBC != null && Strings.isNotBlank(KubernetesHelper.getName(oldBC))) {
@@ -386,10 +396,9 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             String webhookUrl = URLUtils.pathJoin(jenkinsUrl, "/github-webhook/");
 
 
-            String triggeredBuildName = null;
             if (isGitHubOrganisationFolder) {
                 try {
-                    ensureJenkinsCDCredentialCreated(gitOwnerName, details.tokenOrPassword(), jenkinsUrl, authHeader);
+                    ensureJenkinsCDCredentialCreated(gitOwnerName, gitToken, jenkinsUrl, authHeader);
                 } catch (Exception e) {
                     LOG.error("Failed to create Jenkins CD Bot credentials: " + e, e);
                     return Results.fail("Failed to create Jenkins CD Bot credentials: " + e, e);
@@ -433,6 +442,44 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
         CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName, warnings);
         return Results.success(message, status);
+    }
+
+    private void ensureCDGihubSecretExists(OpenShiftClient openShiftClient, String namespace, String gitOwnerName, String gitToken) {
+        String secretName = "cd-github";
+        String username = Base64Helper.base64encode(gitOwnerName);
+        String password = Base64Helper.base64encode(gitToken);
+        Secret secret = null;
+        Resource<Secret, DoneableSecret> secretResource = openShiftClient.secrets().inNamespace(namespace).withName(secretName);
+        try {
+            secret = secretResource.get();
+        } catch (Exception e) {
+            LOG.warn("Failed to lookup secret " + namespace + "/" + secretName + " due to: " + e, e);
+        }
+        if (secret == null ||
+                !Objects.equal(username, getSecretData(secret, "username")) ||
+                !Objects.equal(password, getSecretData(secret, "password"))) {
+
+            try {
+                LOG.info("Upserting Secret " + namespace + "/" + secretName);
+                secretResource.createOrReplace(new SecretBuilder().
+                        withNewMetadata().withName(secretName).addToLabels("jenkins", "sync").addToLabels("creator", "fabric8").endMetadata().
+                        addToData("username", username).
+                        addToData("password", password).
+                        build());
+            } catch (Exception e) {
+                LOG.warn("Failed to upsert Secret " + namespace + "/" + secretName + " due to: " + e, e);
+            }
+        }
+    }
+
+    private static String getSecretData(Secret secret, String key) {
+        if (secret != null) {
+            Map<String, String> data = secret.getData();
+            if (data != null) {
+                return data.get(key);
+            }
+        }
+        return null;
     }
 
     private void addWarning(List<String> warnings, String message, Exception e) {
@@ -632,72 +679,102 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     }
 
     private Response ensureJenkinsCDCredentialCreated(String gitUserName, String gitToken, String jenkinsUrl, String authHeader) {
-        String answer = null;
-
-        LOG.info("Creating Jenkins fabric8 credentials for github user name: " + gitUserName);
-
-        String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/createCredentials");
-        /*
-        String getUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/credentials/fabric8");
-
-        Not sure we need to check it it already exists...
-
-        try {
-            answer = client.target(getUrl)
-                    .request(MediaType.APPLICATION_JSON)
-                    .header("Authorization", authHeader)
-                    .get(String.class);
-        } catch (Exception e) {
-            LOG.warn("Caught probably expected error querying URL: " + getUrl + ". " + e, e);
-        }
-*/
+        Client client = null;
         Response response = null;
 
-        if (answer == null) {
-            String json = "{\n" +
-                    "  \"\": \"0\",\n" +
-                    "  \"credentials\": {\n" +
-                    "    \"scope\": \"GLOBAL\",\n" +
-                    "    \"id\": \"fabric8\",\n" +
-                    "    \"username\": \"" + gitUserName + "\",\n" +
-                    "    \"password\": \"" + gitToken + "\",\n" +
-                    "    \"description\": \"fabric8\",\n" +
-                    "    \"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\"\n" +
-                    "  }\n" +
-                    "}";
+        String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/createCredentials");
+        String getUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/credentials/cd-github");
 
+        try {
+            client = WebClientHelpers.createClientWihtoutHostVerification();
+            response = client.target(getUrl).
+                    request(MediaType.APPLICATION_JSON).
+                    header("Authorization", authHeader).get(Response.class);
 
-            Form form = new Form();
-            form.param("json", json);
-
-            Client client = null;
-            try {
-                client = WebClientHelpers.createClientWihtoutHostVerification();
-                response = client.target(createUrl).request().
-                        header("Authorization", authHeader).
-                        post(Entity.form(form), Response.class);
-
-                int status = response.getStatus();
-                String message = null;
-                Response.StatusType statusInfo = response.getStatusInfo();
-                if (statusInfo != null) {
-                    message = statusInfo.getReasonPhrase();
-                }
-                String extra = "";
-                if (status == 302) {
-                    extra = " Location: " + response.getLocation();
-                }
-                LOG.info("Got response code from Jenkins: " + status + " message: " + message + " from URL: " + createUrl + extra);
-                if (status <= 200 || status > 302) {
-                    LOG.error("Failed to create credentials " + createUrl + ". Status: " + status + " message: " + message);
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to create the fabric8 credentials in Jenkins at the URL " + createUrl + ". " + e, e);
-            } finally {
-                closeQuietly(client);
+            int status = response.getStatus();
+            String message = null;
+            Response.StatusType statusInfo = response.getStatusInfo();
+            if (statusInfo != null) {
+                message = statusInfo.getReasonPhrase();
             }
+            String extra = "";
+            if (status == 302) {
+                extra = " Location: " + response.getLocation();
+            }
+            String resultText = convertEntityToText(response.getEntity());
+            LOG.info("Got response code from Jenkins looking up credential: " + status + " message: " + message +
+                    " from URL: " + getUrl + extra + " result: " + resultText);
+            if (status >= 200 && status < 300) {
+                return response;
+            }
+            if (status < 200 || status > 302) {
+                LOG.error("Failed to lookup github credentials " + getUrl + ". Status: " + status + " message: " + message);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to lookup the github credentials in Jenkins at the URL " + getUrl + ". " + e, e);
+        } finally {
+            closeQuietly(client);
+        }
+
+        LOG.info("Creating Jenkins github credentials for github user name: " + gitUserName);
+
+
+        String json = "{\n" +
+                "  \"\": \"0\",\n" +
+                "  \"credentials\": {\n" +
+                "    \"scope\": \"GLOBAL\",\n" +
+                "    \"id\": \"cd-github\",\n" +
+                "    \"username\": \"" + gitUserName + "\",\n" +
+                "    \"password\": \"" + gitToken + "\",\n" +
+                "    \"description\": \"fabric8 CD credentials for github\",\n" +
+                "    \"$class\": \"com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl\"\n" +
+                "  }\n" +
+                "}";
+
+        Form form = new Form();
+        form.param("json", json);
+
+        try {
+            client = WebClientHelpers.createClientWihtoutHostVerification();
+            response = client.target(createUrl).request().
+                    header("Authorization", authHeader).
+                    post(Entity.form(form), Response.class);
+
+            int status = response.getStatus();
+            String message = null;
+            Response.StatusType statusInfo = response.getStatusInfo();
+            if (statusInfo != null) {
+                message = statusInfo.getReasonPhrase();
+            }
+            String extra = "";
+            if (status == 302) {
+                extra = " Location: " + response.getLocation();
+            }
+            LOG.info("Got response code from Jenkins: " + status + " message: " + message + " from URL: " + createUrl + extra);
+            if (status < 200 || status > 302) {
+                LOG.error("Failed to create credentials " + createUrl + ". Status: " + status + " message: " + message);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create the fabric8 credentials in Jenkins at the URL " + createUrl + ". " + e, e);
+        } finally {
+            closeQuietly(client);
         }
         return response;
+    }
+
+    private String convertEntityToText(Object entity) {
+        try {
+            if (entity instanceof InputStream) {
+                return IOHelpers.readFully((InputStream) entity);
+            } else if (entity instanceof Reader) {
+                return IOHelpers.readFully((Reader) entity);
+            } else if (entity != null) {
+                return entity.toString();
+            }
+            return null;
+        } catch (IOException e) {
+            return "Failed to parse result: " + e;
+        }
     }
 
     private Response ensureJenkinsCDOrganisationJobCreated(String jenkinsUrl, String jobUrl, String oauthToken, String authHeader, String gitOwnerName, String gitRepoName) {
@@ -716,7 +793,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 document = parseEntityAsXml(response.readEntity(String.class));
             }
         } catch (Exception e) {
-            LOG.warn("Failed to get gitub org job at " + getUrl + ". Probably does not exist? " + e, e);
+            LOG.warn("Failed to get github org job at " + getUrl + ". Probably does not exist? " + e, e);
         }
 
         boolean create = false;

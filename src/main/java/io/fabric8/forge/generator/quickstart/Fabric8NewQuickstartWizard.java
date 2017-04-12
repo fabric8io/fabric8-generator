@@ -18,6 +18,8 @@ package io.fabric8.forge.generator.quickstart;
 
 import io.fabric8.forge.addon.utils.archetype.FabricArchetypeCatalogFactory;
 import io.fabric8.forge.generator.CommonSteps;
+import io.openshift.launchpad.ui.input.ProjectName;
+import io.openshift.launchpad.ui.input.TopLevelPackage;
 import org.apache.maven.archetype.catalog.Archetype;
 import org.apache.maven.archetype.catalog.ArchetypeCatalog;
 import org.jboss.forge.addon.dependencies.Coordinate;
@@ -44,8 +46,6 @@ import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
 import org.jboss.forge.addon.ui.wizard.UIWizard;
 import org.jboss.forge.furnace.services.Imported;
-import org.obsidiantoaster.generator.ui.input.ProjectName;
-import org.obsidiantoaster.generator.ui.input.TopLevelPackage;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -59,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static org.obsidiantoaster.generator.Files.deleteRecursively;
+import static io.openshift.launchpad.Files.deleteRecursively;
 
 
 /**

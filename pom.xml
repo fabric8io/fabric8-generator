@@ -15,14 +15,14 @@
     <fabric8.version>2.2.209</fabric8.version>
     <fabric8.maven.plugin.version>3.3.3</fabric8.maven.plugin.version>
 
-    <version.furnace>2.25.2.Final</version.furnace>
-    <version.forge>3.6.0.Final</version.forge>
+    <version.furnace>2.25.4.Final</version.furnace>
+    <version.forge>3.6.1.Final</version.forge>
     <version.wildfly-swarm>2017.3.3</version.wildfly-swarm>
     <fabric8-forge.version>2.3.90</fabric8-forge.version>
     <version.vertx>1.2.1</version.vertx>
     <kohsuke.github-api.version>1.84</kohsuke.github-api.version>
     <infinispan-embedded.version>9.0.0.CR2</infinispan-embedded.version>
-    <obsidian-generator.version>1.0.0.Alpha2_04</obsidian-generator.version>
+    <launchpad-addon.version>2.0.0.Alpha1</launchpad-addon.version>
 
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
@@ -215,28 +215,12 @@
     </dependency>
 
     <dependency>
-      <groupId>org.obsidiantoaster.forge</groupId>
-      <artifactId>obsidian-generator</artifactId>
+      <groupId>io.openshift.launchpad</groupId>
+      <artifactId>launchpad-addon</artifactId>
+      <version>${launchpad-addon.version}</version>
       <classifier>forge-addon</classifier>
-      <version>${obsidian-generator.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>io.fabric8.forge.devops</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
-    <!-- 3rd Party addons -->
-    <!-- Spring Boot -->
-    <!--
-          <dependency>
-             <groupId>io.fabric8.forge</groupId>
-             <artifactId>devops</artifactId>
-             <classifier>forge-addon</classifier>
-             <version>${fabric8-forge.version}</version>
-          </dependency>
-    -->
 
     <dependency>
       <groupId>io.fabric8.forge</groupId>

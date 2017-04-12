@@ -31,7 +31,7 @@
   <navigators>
     <org.jenkinsci.plugins.github__branch__source.GitHubSCMNavigator plugin="github-branch-source@2.0.3">
       <repoOwner></repoOwner>
-      <scanCredentialsId>fabric8</scanCredentialsId>
+      <scanCredentialsId>cd-github</scanCredentialsId>
       <checkoutCredentialsId>SAME</checkoutCredentialsId>
       <pattern></pattern>
       <includes>master</includes>

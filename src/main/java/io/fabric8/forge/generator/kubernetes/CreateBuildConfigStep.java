@@ -683,7 +683,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         Response response = null;
 
         String createUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/createCredentials");
-        String getUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/credentials/cd-github");
+        String getUrl = URLUtils.pathJoin(jenkinsUrl, "/credentials/store/system/domain/_/credentials/cd-github/");
 
         try {
             client = WebClientHelpers.createClientWihtoutHostVerification();

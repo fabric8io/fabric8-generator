@@ -16,6 +16,7 @@
  */
 package io.fabric8.forge.generator.gogs;
 
+import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.GitSecretNames;
@@ -52,13 +53,17 @@ public class GogsProvider extends GitProvider {
     @Override
     public boolean isConfiguredCorrectly() {
         if (configuredCorrectly == null) {
-            KubernetesClient kubernetesClient = KubernetesClientHelper
-                    .createKubernetesClientForCurrentCluster();
-            String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
-            String secretName = GitSecretNames.GOGS_SECRET_NAME;
-            details = GitAccount.loadFromSecret(kubernetesClient, namespace, secretName);
+            if (Configuration.isOnPremise()) {
+                KubernetesClient kubernetesClient = KubernetesClientHelper
+                        .createKubernetesClientForCurrentCluster();
+                String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
+                String secretName = GitSecretNames.GOGS_SECRET_NAME;
+                details = GitAccount.loadFromSecret(kubernetesClient, namespace, secretName);
 
-            configuredCorrectly = details != null && details.hasValidData();
+                configuredCorrectly = details != null && details.hasValidData();
+            } else {
+                configuredCorrectly = false;
+            }
         }
         return configuredCorrectly;
     }

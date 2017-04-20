@@ -54,7 +54,10 @@ public abstract class GitProvider {
             String namespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetesClient, createInNamespace);
 
             if (hasService(kubernetesClient, namespace, ServiceNames.GOGS)) {
-                answer.add(new GogsProvider());
+                GogsProvider gogsProvider = new GogsProvider();
+                if (gogsProvider.isConfiguredCorrectly()) {
+                    answer.add(gogsProvider);
+                }
             }
 /*
             // TODO support gitlab!

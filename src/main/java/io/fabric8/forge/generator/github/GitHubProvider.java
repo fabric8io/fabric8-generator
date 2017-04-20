@@ -16,6 +16,7 @@
  */
 package io.fabric8.forge.generator.github;
 
+import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.GitSecretNames;
@@ -56,13 +57,17 @@ public class GitHubProvider extends GitProvider {
     @Override
     public boolean isConfiguredCorrectly() {
         if (configuredCorrectly == null) {
-            KubernetesClient kubernetesClient = KubernetesClientHelper
-                    .createKubernetesClientForCurrentCluster();
-            String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
-            String githubSecretName = GitSecretNames.GITHUB_SECRET_NAME;
-            details = GitAccount.loadFromSecret(kubernetesClient, namespace, githubSecretName);
+            if (Configuration.isOnPremise()) {
+                KubernetesClient kubernetesClient = KubernetesClientHelper
+                        .createKubernetesClientForCurrentCluster();
+                String namespace = KubernetesClientHelper.getUserSecretNamespace(kubernetesClient);
+                String githubSecretName = GitSecretNames.GITHUB_SECRET_NAME;
+                details = GitAccount.loadFromSecret(kubernetesClient, namespace, githubSecretName);
 
-            configuredCorrectly = details != null && details.hasValidData();
+                configuredCorrectly = details != null && details.hasValidData();
+            } else {
+                configuredCorrectly = true;
+            }
         }
         return configuredCorrectly;
     }

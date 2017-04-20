@@ -57,7 +57,9 @@ public abstract class AbstractGitProviderCommand implements UIWizard {
         gitProviders = GitProvider.loadGitProviders();
         LOG.debug("Git providers: " + gitProviders);
 
-        builder.add(gitProvider);
+        if (gitProviders.size() > 1) {
+            builder.add(gitProvider);
+        }
         gitProvider.setItemLabelConverter(new Converter<GitProvider, String>() {
             @Override
             public String convert(GitProvider gitProvider) {

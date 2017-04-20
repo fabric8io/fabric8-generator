@@ -7,6 +7,7 @@
 
 package io.fabric8.forge.generator.github;
 
+import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.project.support.UserDetails;
@@ -17,6 +18,7 @@ import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
+import org.jboss.forge.addon.ui.input.InputComponentFactory;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
@@ -60,6 +62,22 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
     private UIInput<String> gitRepoDescription;
 
     private GitHubFacade github;
+
+    @Inject
+    public GithubRepoStep() {
+    }
+
+    /**
+     * TODO - hack so we can create this step inside other steps for validation
+     */
+    public GithubRepoStep(CacheFacade cacheManager, InputComponentFactory inputComponentFactory) {
+        super(cacheManager);
+        this.gitOrganisation = inputComponentFactory.createSelectOne("gitOrganisation", 'o', GitOrganisationDTO.class);
+        // TODO note the use of the 'named' field so we generate validation errors on the first wizard page
+        //this.gitRepository = inputComponentFactory.createInput("gitRepository", 'r', String.class);
+        this.gitRepository = inputComponentFactory.createInput("named", 'r', String.class);
+        this.gitRepoDescription = inputComponentFactory.createInput("gitRepoDescription", 'd', String.class);
+    }
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);

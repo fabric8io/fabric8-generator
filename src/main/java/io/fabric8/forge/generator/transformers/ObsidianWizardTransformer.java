@@ -35,7 +35,7 @@ public class ObsidianWizardTransformer implements NavigationResultTransformer {
     private static final transient Logger LOG = LoggerFactory.getLogger(ObsidianWizardTransformer.class);
 
     private Set<String> commandNames = new HashSet<>(Arrays.asList(
-            "Launchpad: New Project",
+            //"Launchpad: New Project",
             "Launchpad: New Starter Project"
     ));
 

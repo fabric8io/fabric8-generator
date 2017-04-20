@@ -18,6 +18,7 @@ package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.Configuration;
+import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.AbstractGitRepoStep;
 import io.fabric8.forge.generator.git.GitAccount;
@@ -33,6 +34,10 @@ public abstract class AbstractGithubStep extends AbstractGitRepoStep {
 
     public AbstractGithubStep() {
         super(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, CacheNames.GITHUB_ORGANISATIONS);
+    }
+
+    public AbstractGithubStep(CacheFacade cacheManager) {
+        super(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, CacheNames.GITHUB_ORGANISATIONS, cacheManager);
     }
 
     protected GitHubFacade createGithubFacade(UIContext context) {

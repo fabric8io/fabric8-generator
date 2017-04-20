@@ -34,6 +34,7 @@ import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.CacheManager;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -66,6 +67,14 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
         this.accountsCacheKey = accountsCacheKey;
         this.organisationsCacheKey = organisationsCacheKey;
     }
+
+    public AbstractGitRepoStep(String accountsCacheKey, String organisationsCacheKey, CacheFacade cacheManager) {
+        this.accountsCacheKey = accountsCacheKey;
+        this.organisationsCacheKey = organisationsCacheKey;
+        this.cacheManager = cacheManager;
+    }
+
+
 
     protected static String getOrganisationName(GitOrganisationDTO org) {
         String orgName = null;

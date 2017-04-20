@@ -69,11 +69,15 @@ public class KeycloakClient {
     }
 
     private String getResponseBody(KeycloakEndpoint endpoint, String authHeader) {
-        Client client = WebClientHelpers.createClientWihtoutHostVerification();
-        return client.target(endpoint.toString())
-                .request(MediaType.APPLICATION_JSON)
-                .header("Authorization", authHeader)
-                .get(String.class);
+        try {
+            Client client = WebClientHelpers.createClientWihtoutHostVerification();
+            return client.target(endpoint.toString())
+                    .request(MediaType.APPLICATION_JSON)
+                    .header("Authorization", authHeader)
+                    .get(String.class);
+        } catch (Exception e) {
+            throw new KeyCloakFailureException(endpoint, e);
+        }
 
 /*
         RestTemplate template = new RestTemplate();

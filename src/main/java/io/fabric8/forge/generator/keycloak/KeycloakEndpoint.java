@@ -41,6 +41,10 @@ public enum KeycloakEndpoint {
         return name;
     }
 
+    public String getEndpoint() {
+        return endpoint;
+    }
+
     @Override
     public String toString() {
         return endpoint;

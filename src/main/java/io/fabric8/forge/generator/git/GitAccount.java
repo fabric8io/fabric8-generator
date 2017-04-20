@@ -19,6 +19,7 @@ package io.fabric8.forge.generator.git;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
+import io.fabric8.forge.generator.keycloak.KeyCloakFailureException;
 import io.fabric8.forge.generator.keycloak.KeycloakEndpoint;
 import io.fabric8.forge.generator.keycloak.TokenHelper;
 import io.fabric8.forge.generator.kubernetes.Base64Helper;
@@ -48,7 +49,7 @@ public class GitAccount {
 
     private static final transient Logger LOG = LoggerFactory.getLogger(GitAccount.class);
 
-    private final String username;
+    private String username;
     private final String token;
     private final String password;
     private final String email;
@@ -69,7 +70,7 @@ public class GitAccount {
         try {
             jwt = JWT.decode(jwtToken);
         } catch (JWTDecodeException e) {
-            throw new WebApplicationException("Failed to parse JWT " + e, e);
+            throw new KeyCloakFailureException("KeyCloak returned an invalid token. Are you sure you are logged in?", e);
         }
         String authToken = TokenHelper.getMandatoryTokenFor(KeycloakEndpoint.GET_GITHUB_TOKEN, authHeader);
         Map<String, Claim> claims = jwt.getClaims();
@@ -189,6 +190,10 @@ public class GitAccount {
         return username;
     }
 
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public String getToken() {
         return token;
     }
@@ -227,4 +232,5 @@ public class GitAccount {
         }
         return "Bearer " + token;
     }
+
 }

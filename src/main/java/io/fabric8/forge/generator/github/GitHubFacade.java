@@ -27,6 +27,7 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.kohsuke.github.GHCreateRepositoryBuilder;
+import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
@@ -43,6 +44,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -86,6 +88,12 @@ public class GitHubFacade {
                 }
             }
             this.github = ghb.build();
+            GHMyself myself = this.github.getMyself();
+            String login = myself.getLogin();
+            if (Strings.isNotBlank(login) && !Objects.equals(login, username)) {
+                LOG.debug("Switching the github user name from " + username + " to " + login);
+                details.setUsername(login);
+            }
         } catch (IOException e) {
             LOG.warn("Failed to create github client for user " + details.getUsername());
         }

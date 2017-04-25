@@ -310,7 +310,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                         if (Files.isFile(markdownFile)) {
                             descriptionMarkdown = IOHelpers.readFully(markdownFile);
                         }
-                        PipelineDTO pipeline = new PipelineDTO(value, label, builder, descriptionMarkdown);
+                        PipelineDTO pipeline = new PipelineDTO(value, humanize(label), builder, descriptionMarkdown);
 
                         File yamlFile = new File(file.getParentFile(), "metadata.yml");
                         if (Files.isFile(yamlFile)) {
@@ -352,6 +352,11 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         } finally {
             LOG.debug("getPipelines took " + watch.taken());
         }
+    }
+
+    private String humanize(String label) {
+        String text = Strings.splitCamelCase(label, ", ");
+        return text.replace(", And, ", " and ");
     }
 
     protected File getJenkinsWorkflowFolder(UIContext context) {

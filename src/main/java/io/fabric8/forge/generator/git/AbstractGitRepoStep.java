@@ -27,6 +27,7 @@ import io.fabric8.utils.Strings;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -101,7 +102,26 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
         GitUtils.configureBranch(git, branch, origin, gitUrl);
         GitUtils.addDummyFileToEmptyFolders(basedir);
         LOG.info("About to git commit and push to: " + gitUrl + " and remote name " + origin);
-        GitUtils.doAddCommitAndPushFiles(git, userDetails, personIdent, branch, origin, message, true);
+        int retryCount = 5;
+        for (int i = retryCount; i > 0; i--) {
+            if (i < retryCount) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+            }
+            try {
+                GitUtils.doAddCommitAndPushFiles(git, userDetails, personIdent, branch, origin, message, true);
+                return;
+            } catch (TransportException e) {
+                if (i <= 1) {
+                    throw e;
+                } else {
+                    LOG.info("Caught a transport exception: " + e + " so retrying");
+                }
+            }
+        }
     }
 
     protected Result updateGitURLInJenkinsfile(File basedir, String gitUrl) {

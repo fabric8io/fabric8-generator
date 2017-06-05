@@ -17,6 +17,7 @@
 package io.fabric8.forge.generator.che;
 
 import io.fabric8.forge.addon.utils.CommandHelpers;
+import io.fabric8.forge.generator.utils.PomFileXml;
 import io.fabric8.utils.DomHelper;
 import io.fabric8.utils.Files;
 import io.fabric8.utils.Strings;
@@ -58,23 +59,17 @@ public class CheStackDetector {
     /**
      * Lets detect the default stack to use for the newly created project
      */
-    public static CheStack detectCheStack(UIContext context, org.jboss.forge.addon.projects.Project project) {
+    public static CheStack detectCheStack(UIContext context, org.jboss.forge.addon.projects.Project project, PomFileXml pom) {
         if (project != null) {
-            if (hasFile(context, project, "package.json")) {
-                return CheStack.NodeJS;
-            }
-            File pomFile = CommandHelpers.getProjectContextFile(context, project, "pom.xml");
-            if (Files.isFile(pomFile)) {
-                Document doc;
-                try {
-                    doc = parseXmlFile(pomFile);
-                } catch (Exception e) {
-                    LOG.debug("Failed to parse " + pomFile + " with: " + e, e);
-                    return CheStack.JavaCentOS;
-                }
+            if (pom != null) {
+                Document doc = pom.getDocument();
                 if (doc != null) {
                     return detectStackFromPomXml(doc);
                 }
+                return CheStack.JavaCentOS;
+            }
+            if (hasFile(context, project, "package.json")) {
+                return CheStack.NodeJS;
             }
         }
         // TODO assume Java?

@@ -19,14 +19,22 @@ import io.fabric8.devops.ProjectConfig;
 import io.fabric8.devops.ProjectConfigs;
 import io.fabric8.forge.addon.utils.CommandHelpers;
 import io.fabric8.forge.addon.utils.StopWatch;
+import io.fabric8.forge.generator.AttributeMapKeys;
+import io.fabric8.forge.generator.cache.CacheFacade;
+import io.fabric8.forge.generator.cache.CacheNames;
+import io.fabric8.forge.generator.kubernetes.CachedSpaces;
+import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
+import io.fabric8.forge.generator.kubernetes.SpaceDTO;
 import io.fabric8.forge.generator.versions.VersionHelper;
 import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.utils.DomHelper;
 import io.fabric8.utils.Files;
 import io.fabric8.utils.Filter;
 import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Objects;
 import io.fabric8.utils.Strings;
+import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.projects.Project;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -46,34 +54,44 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.inject.Inject;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static io.fabric8.forge.generator.che.CheStackDetector.parseXmlFile;
+import static io.fabric8.forge.generator.kubernetes.KubernetesClientHelper.findDefaultNamespace;
+import static io.fabric8.forge.generator.utils.DomUtils.getOrCreateChild;
 import static io.fabric8.kubernetes.api.KubernetesHelper.loadYaml;
 
 public class ChoosePipelineStep extends AbstractProjectOverviewCommand implements UIWizardStep {
     public static final String JENKINSFILE = "Jenkinsfile";
     private static final transient Logger LOG = LoggerFactory.getLogger(ChoosePipelineStep.class);
     private static final String DEFAULT_MAVEN_FLOW = "workflows/maven/CanaryReleaseStageAndApprovePromote.groovy";
+    protected Cache<String, List<String>> namespacesCache;
+    protected Cache<String, CachedSpaces> spacesCache;
     @Inject
     @WithAttributes(label = "Pipeline", description = "The Jenkinsfile used to define the Continous Delivery pipeline")
     private UISelectOne<PipelineDTO> pipeline;
-
+    @Inject
+    @WithAttributes(label = "Organisation", required = true, description = "The organisation")
+    private UISelectOne<String> kubernetesSpace;
+    @Inject
+    @WithAttributes(label = "Space", description = "The space for the new app")
+    private UISelectOne<SpaceDTO> labelSpace;
     @Inject
     private JenkinsPipelineLibrary jenkinsPipelineLibrary;
-
+    @Inject
+    private CacheFacade cacheManager;
+    private KubernetesClient kubernetesClient;
     private String namespace = KubernetesHelper.defaultNamespace();
 
     private boolean hasJenkinsFile;
@@ -88,6 +106,13 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
+        this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
+        this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
+        this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);
+        final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
+        List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> KubernetesClientHelper.loadNamespaces(kubernetesClient, key));
+
+
         StopWatch watch = new StopWatch();
 
         final UIContext context = builder.getUIContext();
@@ -138,8 +163,32 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             builder.add(pipeline);
         }
 
+        kubernetesSpace.setValueChoices(namespaces);
+        if (!namespaces.isEmpty()) {
+            kubernetesSpace.setDefaultValue(findDefaultNamespace(namespaces));
+        }
+        if (namespaces.size() > 1) {
+            builder.add(kubernetesSpace);
+        }
+
+        labelSpace.setValueChoices(() -> loadCachedSpaces(key));
+        labelSpace.setItemLabelConverter(value -> value.getLabel());
+        builder.add(labelSpace);
+
+
         LOG.debug("initializeUI took " + watch.taken());
     }
+
+    private List<SpaceDTO> loadCachedSpaces(String key) {
+        String namespace = kubernetesSpace.getValue();
+        CachedSpaces cachedSpaces = spacesCache.computeIfAbsent(key, k -> new CachedSpaces(namespace, KubernetesClientHelper.loadSpaces(this.kubernetesClient, namespace)));
+        if (!cachedSpaces.getNamespace().equals(namespace)) {
+            cachedSpaces.setNamespace(namespace);
+            cachedSpaces.setSpaces(KubernetesClientHelper.loadSpaces(this.kubernetesClient, namespace));
+        }
+        return cachedSpaces.getSpaces();
+    }
+
 
     private boolean hasLocalJenkinsFile(UIContext context, Project project) {
         File jenkinsFile = CommandHelpers.getProjectContextFile(context, project, "Jenkinsfile");
@@ -150,6 +199,9 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
 
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
+        Map<Object, Object> attributeMap = context.getUIContext().getAttributeMap();
+        attributeMap.put(AttributeMapKeys.NAMESPACE, kubernetesSpace.getValue());
+        attributeMap.put(AttributeMapKeys.SPACE, labelSpace.getValue());
         return null;
     }
 
@@ -165,7 +217,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             status.warning(LOG, "Cannot copy the pipeline to the project as no basedir!");
         } else {
             if (value != null) {
-            String pipelinePath = value.getValue();
+                String pipelinePath = value.getValue();
                 if (Strings.isNullOrBlank(pipelinePath)) {
                     status.warning(LOG, "Cannot copy the pipeline to the project as the pipeline has no Jenkinsfile configured!");
                 } else {
@@ -207,6 +259,9 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                 if (updateFirstChild(properties, "fabric8-maven-plugin.version", VersionHelper.fabric8MavenPluginVersion())) {
                     update = true;
                 }
+                if (ensureSpaceLabelAddedToPom(doc, getSpaceId())) {
+                    update = true;
+                }
                 if (update) {
                     LOG.debug("Updating properties of pom.xml");
                     try {
@@ -217,6 +272,41 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                 }
             }
         }
+    }
+
+    protected String getSpaceId() {
+        SpaceDTO spaceDTO = labelSpace.getValue();
+        if (spaceDTO != null) {
+            return spaceDTO.getId();
+        }
+        return null;
+    }
+
+    private boolean ensureSpaceLabelAddedToPom(Document document, String spaceId) {
+        if (document != null && Strings.isNotBlank(spaceId)) {
+            NodeList plugins = document.getElementsByTagName("plugin");
+            if (plugins != null) {
+                for (int i = 0, size = plugins.getLength(); i < size; i++) {
+                    Node item = plugins.item(i);
+                    if (item instanceof Element) {
+                        Element element = (Element) item;
+                        if ("fabric8-maven-plugin".equals(DomHelper.firstChildTextContent(element, "artifactId"))) {
+                            String indent = "\n        ";
+                            Element configuration = getOrCreateChild(element, "configuration", indent);
+                            Element resources = getOrCreateChild(configuration, "resources", indent + "  ");
+                            Element labels = getOrCreateChild(resources, "labels", indent + "    ");
+                            Element all = getOrCreateChild(labels, "all", indent + "      ");
+                            Element space = getOrCreateChild(all, "space", indent + "        ");
+                            if (!spaceId.equals(space.getTextContent())) {
+                                space.setTextContent(spaceId);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private boolean updateFirstChild(Element parentElement, String elementName, String value) {

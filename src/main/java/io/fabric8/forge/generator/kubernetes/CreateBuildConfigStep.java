@@ -28,26 +28,28 @@ import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
+import io.fabric8.forge.generator.utils.DomUtils;
+import io.fabric8.forge.generator.utils.MavenHelpers;
+import io.fabric8.forge.generator.utils.PomFileXml;
 import io.fabric8.forge.generator.utils.WebClientHelpers;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.ServiceNames;
 import io.fabric8.kubernetes.api.model.DoneableSecret;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceList;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretList;
-import io.fabric8.kubernetes.api.spaces.Space;
-import io.fabric8.kubernetes.api.spaces.Spaces;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.api.model.BuildConfigSpec;
 import io.fabric8.openshift.api.model.BuildRequest;
 import io.fabric8.openshift.api.model.BuildRequestBuilder;
-import io.fabric8.openshift.api.model.Project;
-import io.fabric8.openshift.api.model.ProjectList;
+import io.fabric8.openshift.api.model.BuildStrategy;
+import io.fabric8.openshift.api.model.JenkinsPipelineBuildStrategy;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.DomHelper;
 import io.fabric8.utils.IOHelpers;
@@ -85,6 +87,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -96,8 +99,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -111,15 +112,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     protected static final String GITHUB_SCM_NAVIGATOR_ELEMENT = "org.jenkinsci.plugins.github__branch__source.GitHubSCMNavigator";
 
     private static final transient Logger LOG = LoggerFactory.getLogger(CreateBuildConfigStep.class);
-    public static final String JENKINS_NAMESPACE_SUFFIX = "-jenkins";
     protected Cache<String, List<String>> namespacesCache;
-    protected Cache<String, CachedSpaces> spacesCache;
-    @Inject
-    @WithAttributes(label = "Organisation", required = true, description = "The organisation")
-    private UISelectOne<String> kubernetesSpace;
-    @Inject
-    @WithAttributes(label = "Space", description = "The space running Jenkins")
-    private UISelectOne<SpaceDTO> labelSpace;
     @Inject
     @WithAttributes(label = "Jenkins Space", required = true, description = "The space running Jenkins")
     private UISelectOne<String> jenkinsSpace;
@@ -162,29 +155,17 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     public void initializeUI(final UIBuilder builder) throws Exception {
         this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
-        this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);
         final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
-        List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> loadNamespaces(key));
+        List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> KubernetesClientHelper.loadNamespaces(getKubernetesClient(), key));
 
-        kubernetesSpace.setValueChoices(namespaces);
-        if (!namespaces.isEmpty()) {
-            kubernetesSpace.setDefaultValue(findDefaultNamespace(namespaces));
-        }
         jenkinsSpace.setValueChoices(namespaces);
         if (!namespaces.isEmpty()) {
-            jenkinsSpace.setDefaultValue(findDefaultJenkinsSpace(namespaces));
+            jenkinsSpace.setDefaultValue(KubernetesClientHelper.findDefaultJenkinsSpace(namespaces));
         }
-
-        labelSpace.setValueChoices(() -> loadCachedSpaces(key));
-        labelSpace.setItemLabelConverter(value -> value.getLabel());
 
         triggerBuild.setDefaultValue(true);
         addCIWebHooks.setDefaultValue(true);
 
-        if (namespaces.size() > 1) {
-            builder.add(kubernetesSpace);
-        }
-        builder.add(labelSpace);
         if (namespaces.size() > 1) {
             builder.add(jenkinsSpace);
         }
@@ -192,101 +173,12 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         builder.add(addCIWebHooks);
     }
 
-    protected String findDefaultNamespace(List<String> namespaces) {
-        String jenkinsNamespace = findDefaultJenkinsSpace(namespaces);
-        if (jenkinsNamespace != null && jenkinsNamespace.endsWith(JENKINS_NAMESPACE_SUFFIX)) {
-            String namespace = jenkinsNamespace.substring(0, jenkinsNamespace.length() - JENKINS_NAMESPACE_SUFFIX.length());
-            if (namespaces.contains(namespace)) {
-                return namespace;
-            }
-        }
-        return namespaces.get(0);
-    }
-
-    private String findDefaultJenkinsSpace(List<String> namespaces) {
-        for (String namespace : namespaces) {
-            if (namespace.endsWith(JENKINS_NAMESPACE_SUFFIX)) {
-                return namespace;
-            }
-        }
-        if (namespaces.isEmpty()) {
-            return null;
-        } else {
-            return namespaces.get(0);
-        }
-    }
-
-    private List<SpaceDTO> loadCachedSpaces(String key) {
-        String namespace = kubernetesSpace.getValue();
-        CachedSpaces cachedSpaces = spacesCache.computeIfAbsent(key, k -> new CachedSpaces(namespace, loadSpaces(namespace)));
-        if (!cachedSpaces.getNamespace().equals(namespace)) {
-            cachedSpaces.setNamespace(namespace);
-            cachedSpaces.setSpaces(loadSpaces(namespace));
-        }
-        return cachedSpaces.getSpaces();
-    }
-
-    private List<SpaceDTO> loadSpaces(String namespace) {
-        List<SpaceDTO> answer = new ArrayList<>();
-        if (namespace != null) {
-            try {
-                Spaces spacesValue = Spaces.load(kubernetesClient, namespace);
-                if (spacesValue != null) {
-                    SortedSet<Space> spaces = spacesValue.getSpaceSet();
-                    for (Space space : spaces) {
-                        answer.add(new SpaceDTO(space.getName(), space.getName()));
-                    }
-                }
-            } catch (Exception e) {
-                LOG.warn("Failed to load spaces: " + e, e);
-            }
-        }
-        return answer;
-    }
-
-    private List<String> loadNamespaces(String key) {
-        LOG.debug("Loading user namespaces for key " + key);
-        SortedSet<String> namespaces = new TreeSet<>();
-
-        KubernetesClient kubernetes = getKubernetesClient();
-        OpenShiftClient openshiftClient = KubernetesClientHelper.getOpenShiftClientOrNull(kubernetes);
-        if (openshiftClient != null) {
-            // It is preferable to iterate on the list of projects as regular user with the 'basic-role' bound
-            // are not granted permission get operation on non-existing project resource that returns 403
-            // instead of 404. Only more privileged roles like 'view' or 'cluster-reader' are granted this permission.
-            ProjectList list = openshiftClient.projects().list();
-            if (list != null) {
-                List<Project> items = list.getItems();
-                if (items != null) {
-                    for (Project item : items) {
-                        String name = KubernetesHelper.getName(item);
-                        if (Strings.isNotBlank(name)) {
-                            namespaces.add(name);
-                        }
-                    }
-                }
-            }
-        } else {
-            NamespaceList list = kubernetes.namespaces().list();
-            List<Namespace> items = list.getItems();
-            if (items != null) {
-                for (Namespace item : items) {
-                    String name = KubernetesHelper.getName(item);
-                    if (Strings.isNotBlank(name)) {
-                        namespaces.add(name);
-                    }
-                }
-            }
-        }
-        return new ArrayList<>(namespaces);
-    }
-
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
         UIContext uiContext = context.getUIContext();
         Map<Object, Object> attributeMap = uiContext.getAttributeMap();
 
-        String namespace = kubernetesSpace.getValue();
+        String namespace = (String) attributeMap.get(AttributeMapKeys.NAMESPACE);
         String jenkinsNamespace = jenkinsSpace.getValue();
         if (Strings.isNullOrBlank(jenkinsNamespace)) {
             jenkinsNamespace = namespace;
@@ -353,7 +245,9 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 annotations.put(Annotations.JENKINGS_GENERATED_BY, "jenkins");
                 annotations.put(Annotations.JENKINS_JOB_PATH, "" + gitOwnerName + "/" + gitRepoNameValue + "/master");
             }
-            CheStack stack = CheStackDetector.detectCheStack(uiContext, getCurrentSelectedProject(uiContext));
+            org.jboss.forge.addon.projects.Project project = getCurrentSelectedProject(uiContext);
+            PomFileXml pomFile = MavenHelpers.findPom(uiContext, project);
+            CheStack stack = CheStackDetector.detectCheStack(uiContext, project, pomFile);
             if (stack != null) {
                 cheStackId = stack.getId();
                 annotations.put(Annotations.CHE_STACK, cheStackId);
@@ -364,12 +258,21 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
 
             BuildConfig buildConfig = createBuildConfig(kubernetesClient, namespace, projectName, gitUrl, annotations);
-            SpaceDTO spaceDTO = labelSpace.getValue();
+            SpaceDTO spaceDTO = (SpaceDTO) attributeMap.get(AttributeMapKeys.SPACE);
             if (spaceDTO != null) {
                 String spaceId = spaceDTO.getId();
                 KubernetesHelper.getOrCreateLabels(buildConfig).put("space", spaceId);
+                BuildConfigSpec spec = buildConfig.getSpec();
+                if (spec != null) {
+                    BuildStrategy strategy = spec.getStrategy();
+                    if (strategy != null) {
+                        JenkinsPipelineBuildStrategy jenkinsPipelineStrategy = strategy.getJenkinsPipelineStrategy();
+                        if (jenkinsPipelineStrategy != null) {
+                            ensureEnvVar(jenkinsPipelineStrategy, "FABRIC8_SPACE", spaceId);
+                        }
+                    }
+                }
             }
-            
             controller.applyBuildConfig(buildConfig, "from project " + projectName);
 
             message += "Created OpenShift BuildConfig " + namespace + "/" + projectName;
@@ -443,6 +346,21 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName, warnings);
         return Results.success(message, status);
     }
+
+    private void ensureEnvVar(JenkinsPipelineBuildStrategy jenkinsPipelineStrategy, String envVar, String value) {
+        List<EnvVar> env = jenkinsPipelineStrategy.getEnv();
+        if (env == null) {
+            env = new ArrayList<>();
+        }
+        for (EnvVar var : env) {
+            if (envVar.equals(var.getName())) {
+                return;
+            }
+        }
+        env.add(new EnvVarBuilder().withName(envVar).withValue(value).build());
+        jenkinsPipelineStrategy.setEnv(env);
+    }
+
 
     private void ensureCDGihubSecretExists(OpenShiftClient openShiftClient, String namespace, String gitOwnerName, String gitToken) {
         String secretName = "cd-github";
@@ -844,12 +762,12 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             new IllegalArgumentException("No element <" + GITHUB_SCM_NAVIGATOR_ELEMENT + "> found in the github organisation job!");
         }
 
-        Element repoOwner = mandatoryFirstChild(githubNavigator, "repoOwner");
-        Element pattern = mandatoryFirstChild(githubNavigator, "pattern");
+        Element repoOwner = DomUtils.mandatoryFirstChild(githubNavigator, "repoOwner");
+        Element pattern = DomUtils.mandatoryFirstChild(githubNavigator, "pattern");
 
         String newPattern = combineJobPattern(pattern.getTextContent(), gitRepoName);
-        setElementText(repoOwner, gitOwnerName);
-        setElementText(pattern, newPattern);
+        DomUtils.setElementText(repoOwner, gitOwnerName);
+        DomUtils.setElementText(pattern, newPattern);
     }
 
     protected Element getGithubScmNavigatorElement(Document doc) {
@@ -919,29 +837,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
     private Client createSecureClient() {
         return ClientBuilder.newClient();
-    }
-
-    /**
-     * Updates the element content if its different and returns true if it was changed
-     */
-    private boolean setElementText(Element element, String value) {
-        String textContent = element.getTextContent();
-        if (Objects.equal(value, textContent)) {
-            return false;
-        }
-        element.setTextContent(value);
-        return true;
-    }
-
-    /**
-     * Returns the first child of the given element with the name or throws an exception
-     */
-    private Element mandatoryFirstChild(Element element, String name) {
-        Element child = DomHelper.firstChild(element, name);
-        if (child == null) {
-            throw new IllegalArgumentException("The element <" + element.getTagName() + "> should have at least one child called <" + name + ">");
-        }
-        return child;
     }
 
 

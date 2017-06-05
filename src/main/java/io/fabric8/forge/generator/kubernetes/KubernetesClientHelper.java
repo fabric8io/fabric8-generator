@@ -25,11 +25,15 @@ import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.KubernetesNames;
 import io.fabric8.kubernetes.api.extensions.Configs;
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.api.model.NamespaceList;
+import io.fabric8.kubernetes.api.spaces.Space;
+import io.fabric8.kubernetes.api.spaces.Spaces;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Project;
+import io.fabric8.openshift.api.model.ProjectList;
 import io.fabric8.openshift.api.model.User;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
@@ -38,10 +42,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  */
 public class KubernetesClientHelper {
+    public static final String JENKINS_NAMESPACE_SUFFIX = "-jenkins";
     private static final transient Logger LOG = LoggerFactory.getLogger(KubernetesClientHelper.class);
 
     public static KubernetesClient createKubernetesClient(UIContext context) {
@@ -184,4 +193,81 @@ public class KubernetesClientHelper {
         }
     }
 
+    public static List<String> loadNamespaces(KubernetesClient kubernetes, String key) {
+        LOG.debug("Loading user namespaces for key " + key);
+        SortedSet<String> namespaces = new TreeSet<>();
+
+        OpenShiftClient openshiftClient = getOpenShiftClientOrNull(kubernetes);
+        if (openshiftClient != null) {
+            // It is preferable to iterate on the list of projects as regular user with the 'basic-role' bound
+            // are not granted permission get operation on non-existing project resource that returns 403
+            // instead of 404. Only more privileged roles like 'view' or 'cluster-reader' are granted this permission.
+            ProjectList list = openshiftClient.projects().list();
+            if (list != null) {
+                List<Project> items = list.getItems();
+                if (items != null) {
+                    for (Project item : items) {
+                        String name = KubernetesHelper.getName(item);
+                        if (Strings.isNotBlank(name)) {
+                            namespaces.add(name);
+                        }
+                    }
+                }
+            }
+        } else {
+            NamespaceList list = kubernetes.namespaces().list();
+            List<Namespace> items = list.getItems();
+            if (items != null) {
+                for (Namespace item : items) {
+                    String name = KubernetesHelper.getName(item);
+                    if (Strings.isNotBlank(name)) {
+                        namespaces.add(name);
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(namespaces);
+    }
+
+    public static List<SpaceDTO> loadSpaces(KubernetesClient kubernetesClient, String namespace) {
+        List<SpaceDTO> answer = new ArrayList<>();
+        if (namespace != null) {
+            try {
+                Spaces spacesValue = Spaces.load(kubernetesClient, namespace);
+                if (spacesValue != null) {
+                    SortedSet<Space> spaces = spacesValue.getSpaceSet();
+                    for (Space space : spaces) {
+                        answer.add(new SpaceDTO(space.getName(), space.getName()));
+                    }
+                }
+            } catch (Exception e) {
+                LOG.warn("Failed to load spaces: " + e, e);
+            }
+        }
+        return answer;
+    }
+
+    public static String findDefaultNamespace(List<String> namespaces) {
+        String jenkinsNamespace = findDefaultJenkinsSpace(namespaces);
+        if (jenkinsNamespace != null && jenkinsNamespace.endsWith(JENKINS_NAMESPACE_SUFFIX)) {
+            String namespace = jenkinsNamespace.substring(0, jenkinsNamespace.length() - JENKINS_NAMESPACE_SUFFIX.length());
+            if (namespaces.contains(namespace)) {
+                return namespace;
+            }
+        }
+        return namespaces.get(0);
+    }
+
+    public static String findDefaultJenkinsSpace(List<String> namespaces) {
+        for (String namespace : namespaces) {
+            if (namespace.endsWith(JENKINS_NAMESPACE_SUFFIX)) {
+                return namespace;
+            }
+        }
+        if (namespaces.isEmpty()) {
+            return null;
+        } else {
+            return namespaces.get(0);
+        }
+    }
 }

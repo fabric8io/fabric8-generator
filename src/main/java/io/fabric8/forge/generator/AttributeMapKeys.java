@@ -32,4 +32,6 @@ public class AttributeMapKeys {
     public static final String GIT_REPOSITORY_PATTERN = "gitRepositoryPattern";
     public static final String GIT_REPO_NAMES = "gitRepositories";
     public static final Class<GitAccount> GIT_ACCOUNT = GitAccount.class;
+    public static final String NAMESPACE = "namespace";
+    public static final String SPACE = "labelSpace";
 }

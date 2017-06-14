@@ -14,9 +14,11 @@ import org.infinispan.Cache;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
+import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
+import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
@@ -100,11 +102,20 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
     }
 
     @Override
+    public NavigationResult next(UINavigationContext context) throws Exception {
+        storeAttributes(context.getUIContext());
+        return null;
+    }
+    
+    @Override
     public Result execute(UIExecutionContext context) throws Exception {
+        return storeAttributes(context.getUIContext());
+    }
+
+    protected Result storeAttributes(UIContext uiContext) {
         if (github == null) {
             return Results.fail("No github account setup");
         }
-        UIContext uiContext = context.getUIContext();
         String pattern = gitRepositoryPattern.getValue();
 /*
         Iterable<String> repositories = gitRepositories.getValue();

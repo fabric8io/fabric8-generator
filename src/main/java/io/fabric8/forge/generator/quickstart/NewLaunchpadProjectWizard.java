@@ -20,6 +20,7 @@ import io.fabric8.forge.generator.CommonSteps;
 import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.github.GithubRepoStep;
+import io.fabric8.utils.Strings;
 import io.openshift.launchpad.ui.input.ProjectName;
 import io.openshift.launchpad.ui.quickstart.NewProjectWizard;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -40,6 +41,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.Map;
+
+import static java.lang.Character.*;
 
 /**
  * Lets add extra validation to the first page so that users can hit Finish early
@@ -69,6 +72,11 @@ public class NewLaunchpadProjectWizard extends NewProjectWizard {
         }
         Object type = getTypeValue();
         if (name != null) {
+            if (Strings.isNotBlank(name)) {
+                if (invalidProjectName(context, name)) {
+                    return;
+                }
+            }
             if (!Configuration.isOnPremise()) {
                 // lets populate the attributes so we can validate another step
                 attributeMap.put("name", name);
@@ -101,6 +109,23 @@ public class NewLaunchpadProjectWizard extends NewProjectWizard {
                 repoStep.validate(context);
             }
         }
+    }
+
+    protected boolean invalidProjectName(UIValidationContext context, String name) {
+        String errorMessage = ProjectNameValidator.validProjectName(name);
+        if (errorMessage != null) {
+            context.addValidationError(getNamedInput(context), errorMessage + ".\n");
+            return true;
+        }
+        return false;
+    }
+
+    protected InputComponent<?, ?> getNamedInput(UIValidationContext context) {
+        InputComponent<?, ?> answer = (InputComponent<?, ?>) getParentClassFieldValue("named");
+        if (answer == null) {
+            answer = context.getCurrentInputComponent();
+        }
+        return answer;
     }
 
     // TODO lets add this to the base class so we can avoid this horrid reflection!

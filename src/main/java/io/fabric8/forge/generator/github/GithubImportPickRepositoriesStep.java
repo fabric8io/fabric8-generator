@@ -9,14 +9,13 @@ package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheNames;
-import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
-import org.jboss.forge.addon.ui.input.UISelectOne;
+import org.jboss.forge.addon.ui.input.UISelectMany;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
 import org.jboss.forge.addon.ui.result.NavigationResult;
 import org.jboss.forge.addon.ui.result.Result;
@@ -43,14 +42,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
     protected Cache<String, Collection<String>> repositoriesCache;
     @Inject
     @WithAttributes(label = "Repository name pattern", description = "The regex pattern to match repository names")
-    private UISelectOne<String> gitRepositoryPattern;
-    /*
-        // TODO the front end can't handle this yet so lets disable for now
-
-        @Inject
-        @WithAttributes(label = "Repositories", description = "The repositories to import")
-        private UISelectMany<String> gitRepositories;
-    */
+    private UISelectMany<String> gitRepositoryPattern;
     private GitHubFacade github;
     private Collection<String> repositoryNames;
 
@@ -70,11 +62,9 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         this.repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRespositoriesForOrganisation(gitOrganisation));
 
         List<String> patternChoices = new ArrayList<>();
-        String defaultChoice = ".*";
-        patternChoices.add(defaultChoice);
         patternChoices.addAll(repositoryNames);
 
-        gitRepositoryPattern.setDefaultValue(defaultChoice);
+        //gitRepositoryPattern.setDefaultValue(defaultChoice);
         gitRepositoryPattern.setValueChoices(patternChoices);
 
         builder.add(gitRepositoryPattern);
@@ -91,13 +81,9 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
             // invoked too early before the github account is setup - lets return silently
             return;
         }
-        String pattern = gitRepositoryPattern.getValue();
-        if (Strings.isNullOrBlank(pattern)) {
-            try {
-                Pattern regex = Pattern.compile(pattern);
-            } catch (Exception e) {
-                context.addValidationWarning(gitRepositoryPattern, "Not a valid regular expression: " + e.getMessage());
-            }
+        Iterable<String> value = gitRepositoryPattern.getValue();
+        if (!value.iterator().hasNext()) {
+            context.addValidationWarning(gitRepositoryPattern, "You must select a repository to import");
         }
     }
 
@@ -106,7 +92,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         storeAttributes(context.getUIContext());
         return null;
     }
-    
+
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
         return storeAttributes(context.getUIContext());
@@ -116,28 +102,24 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         if (github == null) {
             return Results.fail("No github account setup");
         }
-        String pattern = gitRepositoryPattern.getValue();
-/*
-        Iterable<String> repositories = gitRepositories.getValue();
-        if (Strings.isNullOrBlank(pattern)) {
-            pattern = createPatternFromRepositories(repositories);
-        }
-*/
         List<String> repositories = new ArrayList<>();
 
-        Pattern regex;
-        try {
-            regex = Pattern.compile(pattern);
-        } catch (Exception e) {
-            return Results.fail("Invalid regular expression `" + pattern + "` due to: " + e, e);
-        }
+        Iterable<String> values = gitRepositoryPattern.getValue();
+        for (String pattern : values) {
+            Pattern regex;
+            try {
+                regex = Pattern.compile(pattern);
+            } catch (Exception e) {
+                return Results.fail("Invalid regular expression `" + pattern + "` due to: " + e, e);
+            }
 
-        for (String repositoryName : repositoryNames) {
-            if (regex.matcher(repositoryName).matches()) {
-                repositories.add(repositoryName);
+            for (String repositoryName : repositoryNames) {
+                if (regex.matcher(repositoryName).matches()) {
+                    repositories.add(repositoryName);
+                }
             }
         }
-
+        String pattern = createPatternFromRepositories(repositories);
         uiContext.getAttributeMap().put(GIT_REPOSITORY_PATTERN, pattern);
         uiContext.getAttributeMap().put(GIT_REPO_NAMES, repositories);
         return Results.success();
@@ -153,6 +135,4 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         }
         return builder.toString();
     }
-
-
 }

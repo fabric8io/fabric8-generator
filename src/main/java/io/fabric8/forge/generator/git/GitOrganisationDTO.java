@@ -17,6 +17,7 @@
 package io.fabric8.forge.generator.git;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.fabric8.utils.Strings;
 import org.kohsuke.github.GHOrganization;
 
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.net.URL;
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
+    private String id;
     private String name;
     private String avatarUrl;
     private String htmlUrl;
@@ -35,13 +37,14 @@ public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
     }
 
     public GitOrganisationDTO(String name) {
+        this.id = name;
         this.name = name;
         this.htmlUrl = "https://github.com/" + name;
-
         // TODO should we add an avatar for the current user?
     }
 
     public GitOrganisationDTO(GHOrganization organization) throws IOException {
+        this.id = organization.getLogin();
         this.name = organization.getName();
         this.avatarUrl = organization.getAvatarUrl();
         URL htmlUrl = organization.getHtmlUrl();
@@ -50,33 +53,44 @@ public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
         }
     }
 
+    public boolean isValid() {
+        return Strings.isNotBlank(id) && Strings.isNotBlank(name);
+    }
+
     @Override
     public String toString() {
-        return "GitHubOrganisationDTO{" +
-                "name='" + name + '\'' +
+        return "GitOrganisationDTO{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
                 '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         GitOrganisationDTO that = (GitOrganisationDTO) o;
 
-        return name != null ? name.equals(that.name) : that.name == null;
+        return id != null ? id.equals(that.id) : that.id == null;
     }
 
     @Override
     public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+        return id != null ? id.hashCode() : 0;
     }
 
     @Override
     public int compareTo(GitOrganisationDTO that) {
         return this.name.compareTo(that.name);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {

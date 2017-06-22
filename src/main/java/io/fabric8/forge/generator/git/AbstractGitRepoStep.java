@@ -80,7 +80,7 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
     protected static String getOrganisationName(GitOrganisationDTO org) {
         String orgName = null;
         if (org != null) {
-            orgName = org.getName();
+            orgName = org.getId();
         }
         return orgName;
     }

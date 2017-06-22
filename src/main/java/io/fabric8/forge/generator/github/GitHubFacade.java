@@ -118,9 +118,8 @@ public class GitHubFacade {
                 if (map != null) {
                     Collection<GHOrganization> organizations = map.values();
                     for (GHOrganization organization : organizations) {
-
                         GitOrganisationDTO dto = new GitOrganisationDTO(organization);
-                        if (dto.getName() != null) {
+                        if (dto.isValid()) {
                             organisations.add(dto);
                         }
                     }

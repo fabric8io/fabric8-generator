@@ -58,7 +58,7 @@ public class GithubImportPickOrganisationStep extends AbstractGithubStep impleme
         gitOrganisation.setItemLabelConverter(new Converter<GitOrganisationDTO, String>() {
             @Override
             public String convert(GitOrganisationDTO organisation) {
-                return organisation.getName();
+                return organisation.getId();
             }
         });
         String userName = github.getDetails().getUsername();
@@ -70,7 +70,6 @@ public class GithubImportPickOrganisationStep extends AbstractGithubStep impleme
                 }
             }
         }
-        String projectName = getProjectName(builder.getUIContext());
         if (organisations.size() > 1) {
             builder.add(gitOrganisation);
         }
@@ -105,7 +104,8 @@ public class GithubImportPickOrganisationStep extends AbstractGithubStep impleme
         if (github == null) {
             return Results.fail("No github account setup");
         }
-        String org = getOrganisationName(gitOrganisation.getValue());
+        GitOrganisationDTO organisation = gitOrganisation.getValue();
+        String org = getOrganisationName(organisation);
 
         String gitOwnerName = org;
         uiContext.getAttributeMap().put(GIT_OWNER_NAME, gitOwnerName);

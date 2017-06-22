@@ -52,7 +52,7 @@ public class GitAccount {
     private String username;
     private final String token;
     private final String password;
-    private final String email;
+    private String email;
 
     public GitAccount(String username, String token, String password, String email) {
         this.username = username;
@@ -204,6 +204,10 @@ public class GitAccount {
 
     public String getEmail() {
         return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public boolean hasValidData() {

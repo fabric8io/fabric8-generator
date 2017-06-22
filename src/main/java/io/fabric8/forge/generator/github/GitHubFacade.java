@@ -94,6 +94,10 @@ public class GitHubFacade {
                 LOG.debug("Switching the github user name from " + username + " to " + login);
                 details.setUsername(login);
             }
+            String email = myself.getEmail();
+            if (Strings.isNotBlank(email) && Strings.isNullOrBlank(details.getEmail())) {
+                details.setEmail(email);
+            }
         } catch (IOException e) {
             LOG.warn("Failed to create github client for user " + details.getUsername());
         }

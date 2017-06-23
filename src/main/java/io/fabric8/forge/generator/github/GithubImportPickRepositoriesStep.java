@@ -9,7 +9,11 @@ package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheNames;
+import io.fabric8.forge.generator.git.GitOrganisationDTO;
+import io.fabric8.forge.generator.git.GitRepositoryDTO;
+import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
+import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -39,12 +43,12 @@ import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAMES;
  */
 public class GithubImportPickRepositoriesStep extends AbstractGithubStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
-    protected Cache<String, Collection<String>> repositoriesCache;
+    protected Cache<String, Collection<GitRepositoryDTO>> repositoriesCache;
     @Inject
     @WithAttributes(label = "Repository name pattern", description = "The regex pattern to match repository names")
-    private UISelectMany<String> gitRepositoryPattern;
+    private UISelectMany<GitRepositoryDTO> gitRepositoryPattern;
     private GitHubFacade github;
-    private Collection<String> repositoryNames;
+    private Collection<GitRepositoryDTO> repositoryNames;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
@@ -61,12 +65,13 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
 
         this.repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRespositoriesForOrganisation(gitOrganisation));
 
-        List<String> patternChoices = new ArrayList<>();
-        patternChoices.addAll(repositoryNames);
-
-        //gitRepositoryPattern.setDefaultValue(defaultChoice);
-        gitRepositoryPattern.setValueChoices(patternChoices);
-
+        gitRepositoryPattern.setValueChoices(repositoryNames);
+        gitRepositoryPattern.setItemLabelConverter(new Converter<GitRepositoryDTO, String>() {
+            @Override
+            public String convert(GitRepositoryDTO dto) {
+                return dto.getId();
+            }
+        });
         builder.add(gitRepositoryPattern);
 
 /*
@@ -81,7 +86,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
             // invoked too early before the github account is setup - lets return silently
             return;
         }
-        Iterable<String> value = gitRepositoryPattern.getValue();
+        Iterable<GitRepositoryDTO> value = gitRepositoryPattern.getValue();
         if (!value.iterator().hasNext()) {
             context.addValidationWarning(gitRepositoryPattern, "You must select a repository to import");
         }
@@ -104,8 +109,14 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         }
         List<String> repositories = new ArrayList<>();
 
-        Iterable<String> values = gitRepositoryPattern.getValue();
-        for (String pattern : values) {
+        Iterable<GitRepositoryDTO> values = gitRepositoryPattern.getValue();
+        for (GitRepositoryDTO repo : values) {
+            String id = repo.getId();
+
+            if (Strings.isNotBlank(id))  {
+                repositories.add(id);
+            }
+/*
             Pattern regex;
             try {
                 regex = Pattern.compile(pattern);
@@ -118,6 +129,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
                     repositories.add(repositoryName);
                 }
             }
+*/
         }
         String pattern = createPatternFromRepositories(repositories);
         uiContext.getAttributeMap().put(GIT_REPOSITORY_PATTERN, pattern);

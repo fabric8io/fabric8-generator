@@ -19,62 +19,76 @@ package io.fabric8.forge.generator.git;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.utils.Strings;
 import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GHRepository;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
-import static io.fabric8.forge.generator.github.GitHubFacade.MY_PERSONAL_GITHUB_ACCOUNT;
 import static io.fabric8.forge.generator.utils.StringHelpers.createdAtText;
 
 /**
- * Represents a github organisation you can pick
+ * Represents a github repository you can pick
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
+public class GitRepositoryDTO implements Comparable<GitRepositoryDTO> {
     private String id;
     private String name;
     private String description;
-    private String avatarUrl;
-    private String htmlUrl;
 
-    public GitOrganisationDTO(String name, String description) {
-        this.id = name;
-        this.name = name;
-        this.htmlUrl = "https://github.com/" + name;
-        this.description = description;
-        // TODO should we add an avatar for the current user?
-    }
-
-    public GitOrganisationDTO(GHOrganization organization, String username) throws IOException {
-        this.id = organization.getLogin();
-        this.name = organization.getName();
-        if (this.name == null) {
-            this.name = this.id;
+    public GitRepositoryDTO(String key, GHRepository repository) {
+        this.id = key;
+        this.name = repository.getName();
+        if (Strings.isNullOrBlank(name)) {
+            name = repository.getFullName();
         }
-        if (Objects.equals(this.id, username) || Objects.equals(this.name, username)) {
-            this.description = MY_PERSONAL_GITHUB_ACCOUNT + " " + createdAtText(organization.getCreatedAt());
-        } else {
-            this.description = organization.getBlog();
-            if (Strings.isNullOrBlank(this.description) || this.name.equals(this.description)) {
-                this.description = organization.getLocation();
-                if (Strings.isNullOrBlank(this.description)) {
-                    try {
-                        this.description = createdAtText(organization.getCreatedAt());
-                    } catch (IOException e) {
-                        // ignore
-                    }
-                }
-                if (Strings.isNullOrBlank(this.description)) {
-                    this.description = organization.getBlog();
-                }
+        if (Strings.isNullOrBlank(name)) {
+            name = key;
+        }
+        description = repository.getDescription();
+        if (Strings.isNullOrBlank(description) || key.equals(description)) {
+            try {
+                description = createdAtText(repository.getCreatedAt());
+            } catch (IOException e) {
+                // ignore
             }
         }
-        this.avatarUrl = organization.getAvatarUrl();
-        URL htmlUrl = organization.getHtmlUrl();
-        if (htmlUrl != null) {
-            this.htmlUrl = htmlUrl.toString();
+        if (Strings.isNullOrBlank(description)) {
+            description = repository.getHomepage();
         }
+    }
+
+    public static List<GitRepositoryDTO> asListOfRepositories(Iterable<String> names) {
+        List<GitRepositoryDTO> answer = new ArrayList<>();
+        for (String name : names) {
+            answer.add(new GitRepositoryDTO(name));
+        }
+        return answer;
+    }
+
+    public GitRepositoryDTO() {
+    }
+
+    public GitRepositoryDTO(String name) {
+        this.id = name;
+        this.name = name;
+    }
+
+    public GitRepositoryDTO(String name, String description) {
+        this.id = name;
+        this.name = name;
+        this.description = description;
+        if (Objects.equals(this.name, this.description)) {
+            this.description = "";
+        }
+    }
+
+    public GitRepositoryDTO(GHOrganization organization) throws IOException {
+        this.id = organization.getLogin();
+        this.name = organization.getName();
     }
 
     public boolean isValid() {
@@ -83,7 +97,7 @@ public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
 
     @Override
     public String toString() {
-        return "GitOrganisationDTO{" +
+        return "GitRepositoryDTO{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 '}';
@@ -94,7 +108,7 @@ public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        GitOrganisationDTO that = (GitOrganisationDTO) o;
+        GitRepositoryDTO that = (GitRepositoryDTO) o;
 
         return id != null ? id.equals(that.id) : that.id == null;
     }
@@ -105,7 +119,7 @@ public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
     }
 
     @Override
-    public int compareTo(GitOrganisationDTO that) {
+    public int compareTo(GitRepositoryDTO that) {
         return this.name.compareTo(that.name);
     }
 
@@ -131,21 +145,5 @@ public class GitOrganisationDTO implements Comparable<GitOrganisationDTO> {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
-
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
-
-    public String getHtmlUrl() {
-        return htmlUrl;
-    }
-
-    public void setHtmlUrl(String htmlUrl) {
-        this.htmlUrl = htmlUrl;
     }
 }

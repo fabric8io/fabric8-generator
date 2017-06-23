@@ -19,6 +19,7 @@ package io.fabric8.forge.generator.github;
 import io.fabric8.forge.generator.git.EnvironmentVariablePrefixes;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
+import io.fabric8.forge.generator.git.GitRepositoryDTO;
 import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
@@ -49,10 +50,13 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static io.fabric8.forge.generator.utils.StringHelpers.createdAtText;
+
 /**
  */
 public class GitHubFacade {
     private static final transient Logger LOG = LoggerFactory.getLogger(GitHubFacade.class);
+    public static final String MY_PERSONAL_GITHUB_ACCOUNT = "My personal github account";
     private final GitAccount details;
 
     private GitHub github;
@@ -108,7 +112,7 @@ public class GitHubFacade {
         SortedSet<GitOrganisationDTO> organisations = new TreeSet();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {
-            organisations.add(new GitOrganisationDTO(username));
+            organisations.add(new GitOrganisationDTO(username, MY_PERSONAL_GITHUB_ACCOUNT));
         }
         GitHub github = this.github;
         if (github != null) {
@@ -118,7 +122,7 @@ public class GitHubFacade {
                 if (map != null) {
                     Collection<GHOrganization> organizations = map.values();
                     for (GHOrganization organization : organizations) {
-                        GitOrganisationDTO dto = new GitOrganisationDTO(organization);
+                        GitOrganisationDTO dto = new GitOrganisationDTO(organization, username);
                         if (dto.isValid()) {
                             organisations.add(dto);
                         }
@@ -157,8 +161,8 @@ public class GitHubFacade {
         }
     }
 
-    public Collection<String> getRespositoriesForOrganisation(String orgName) {
-        Set<String> answer = new TreeSet<>();
+    public Collection<GitRepositoryDTO> getRespositoriesForOrganisation(String orgName) {
+        Set<GitRepositoryDTO> answer = new TreeSet<>();
         GitHub github = this.github;
         if (github != null) {
             try {
@@ -170,7 +174,13 @@ public class GitHubFacade {
                 } else {
                     repositories = github.getOrganization(orgName).getRepositories();
                 }
-                answer.addAll(repositories.keySet());
+                if (repositories != null) {
+                    for (Map.Entry<String, GHRepository> entry : repositories.entrySet()) {
+                        String key = entry.getKey();
+                        GHRepository repository = entry.getValue();
+                        answer.add(new GitRepositoryDTO(key, repository));
+                    }
+                }
             } catch (IOException e) {
                 LOG.warn("Caught exception looking up github repositories for " + orgName + ". " + e, e);
             }

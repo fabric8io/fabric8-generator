@@ -49,6 +49,7 @@ import static io.fabric8.forge.generator.pipeline.JenkinsPipelineLibrary.getSyst
  */
 public class GogsFacade {
     private static final transient Logger LOG = LoggerFactory.getLogger(GogsFacade.class);
+    private static final String MY_PERSONAL_GOGS_ACCOUNT = "My personal gogs account";
     private final GitAccount details;
     private final String address;
     private GitRepoClientSupport gogs;
@@ -61,7 +62,7 @@ public class GogsFacade {
         this.details = details;
 
         String username = details.getUsername();
-        String password = details.getPassword();
+        String password = details.getPassword();        
 
         String gogsAddress = null;
         if (Configuration.isOnPremise()) {
@@ -93,7 +94,7 @@ public class GogsFacade {
         SortedSet<GitOrganisationDTO> organisations = new TreeSet<>();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {
-            organisations.add(new GitOrganisationDTO(username));
+            organisations.add(new GitOrganisationDTO(username, MY_PERSONAL_GOGS_ACCOUNT));
         }
         GitRepoClientSupport gogs = this.gogs;
         if (gogs != null) {

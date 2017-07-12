@@ -21,6 +21,7 @@ import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.github.GithubRepoStep;
 import io.fabric8.utils.Strings;
+import io.openshift.launchpad.catalog.Booster;
 import io.openshift.launchpad.ui.input.ProjectName;
 import io.openshift.launchpad.ui.quickstart.NewProjectWizard;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -40,9 +41,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import static java.lang.Character.*;
 
 /**
  * Lets add extra validation to the first page so that users can hit Finish early
@@ -59,6 +60,36 @@ public class NewLaunchpadProjectWizard extends NewProjectWizard {
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
         return Metadata.forCommand(this.getClass()).name("Fabric8: New Project").description("Generate your project from a booster").category(Categories.create(new String[]{"Openshift.io"}));
+    }
+
+    @Override
+    public void initializeUI(UIBuilder builder) throws Exception {
+        super.initializeUI(builder);
+
+        Object boosterFieldValue = getParentClassFieldValue("type");
+        if (boosterFieldValue == null || !(boosterFieldValue instanceof UISelectOne)) {
+            LOG.warn("Cannot find the parent `type` field!");
+            return;
+        }
+        UISelectOne<Booster> boosterField = (UISelectOne) boosterFieldValue;
+
+        List<Booster> quickstarts = filterBoosters(boosterField);
+
+        boosterField.setValueChoices(quickstarts);
+        if(!quickstarts.isEmpty()) {
+            boosterField.setDefaultValue(quickstarts.get(0));
+        }
+    }
+
+    private List<Booster> filterBoosters(UISelectOne<Booster> boosterField) {
+        List<Booster> answer = new ArrayList<>();
+        Iterable<Booster> valueChoices = boosterField.getValueChoices();
+        for (Booster booster : valueChoices) {
+            if (ValidBoosters.validRhoarBooster(booster)) {
+                answer.add(booster);
+            }
+        }
+        return answer;
     }
 
     @Override

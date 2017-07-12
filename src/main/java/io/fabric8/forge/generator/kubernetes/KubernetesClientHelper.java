@@ -35,6 +35,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Project;
 import io.fabric8.openshift.api.model.ProjectList;
 import io.fabric8.openshift.api.model.User;
+import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
 import org.jboss.forge.addon.ui.context.UIContext;
@@ -158,7 +159,7 @@ public class KubernetesClientHelper {
      */
     public static void lazyCreateNamespace(KubernetesClient kubernetesClient, String namespace) {
         OpenShiftClient openShiftClient = getOpenShiftClientOrNull(kubernetesClient);
-        if (openShiftClient != null) {
+        if (supportsProjects(openShiftClient)) {
             Project project = null;
             try {
                 project = openShiftClient.projects().withName(namespace).get();
@@ -198,7 +199,7 @@ public class KubernetesClientHelper {
         SortedSet<String> namespaces = new TreeSet<>();
 
         OpenShiftClient openshiftClient = getOpenShiftClientOrNull(kubernetes);
-        if (openshiftClient != null) {
+        if (supportsProjects(openshiftClient)) {
             // It is preferable to iterate on the list of projects as regular user with the 'basic-role' bound
             // are not granted permission get operation on non-existing project resource that returns 403
             // instead of 404. Only more privileged roles like 'view' or 'cluster-reader' are granted this permission.
@@ -227,6 +228,10 @@ public class KubernetesClientHelper {
             }
         }
         return new ArrayList<>(namespaces);
+    }
+
+    protected static boolean supportsProjects(OpenShiftClient openshiftClient) {
+        return openshiftClient != null && openshiftClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.PROJECT);
     }
 
     public static List<SpaceDTO> loadSpaces(KubernetesClient kubernetesClient, String namespace) {

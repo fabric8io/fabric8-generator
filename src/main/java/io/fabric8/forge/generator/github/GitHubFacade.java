@@ -58,6 +58,7 @@ public class GitHubFacade {
     private static final transient Logger LOG = LoggerFactory.getLogger(GitHubFacade.class);
     public static final String MY_PERSONAL_GITHUB_ACCOUNT = "My personal github account";
     private final GitAccount details;
+    private GHMyself myself;
 
     private GitHub github;
 
@@ -92,7 +93,7 @@ public class GitHubFacade {
                 }
             }
             this.github = ghb.build();
-            GHMyself myself = this.github.getMyself();
+            this.myself = this.github.getMyself();
             String login = myself.getLogin();
             if (Strings.isNotBlank(login) && !Objects.equals(login, username)) {
                 LOG.debug("Switching the github user name from " + username + " to " + login);
@@ -189,7 +190,40 @@ public class GitHubFacade {
     }
 
     public UserDetails createUserDetails(String gitUrl) {
-        return new UserDetails(gitUrl, gitUrl, details.getUsername(), details.tokenOrPassword(), details.getEmail());
+        return new UserDetails(gitUrl, gitUrl, details.getUsername(), details.tokenOrPassword(), getEmail());
+    }
+
+    public GHMyself getMyself() {
+        if (myself == null) {
+            try {
+                myself = this.github.getMyself();
+                if (myself == null) {
+                    LOG.warn("Could not find valid github.getMyself()");
+                }
+            } catch (IOException e) {
+                LOG.warn("Could not load github.getMyself(): " + e, e);
+            }
+            
+        }
+        return myself;
+    }
+
+    public String getEmail() {
+        String email = details.getEmail();
+        if (Strings.isNullOrBlank(email)) {
+            GHMyself gitMyself = getMyself();
+            if (gitMyself != null) {
+                try {
+                    email = gitMyself.getEmail();
+                    if (Strings.isNullOrBlank(email)) {
+                        LOG.warn("No email found on the user settings or GitHub myself!");
+                    }
+                } catch (IOException e) {
+                    LOG.warn("Could not get github.getMyself().getEmail(): " + e, e);
+                }
+            }
+        }
+        return email;
     }
 
     public GitAccount getDetails() {

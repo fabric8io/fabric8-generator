@@ -9,7 +9,6 @@ package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheNames;
-import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.forge.generator.git.GitRepositoryDTO;
 import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPOSITORY_PATTERN;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAMES;
@@ -45,7 +43,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
     protected Cache<String, Collection<GitRepositoryDTO>> repositoriesCache;
     @Inject
-    @WithAttributes(label = "Repository name pattern", description = "The regex pattern to match repository names")
+    @WithAttributes(label = "Repository name pattern", required = true, description = "The regex pattern to match repository names")
     private UISelectMany<GitRepositoryDTO> gitRepositoryPattern;
     private GitHubFacade github;
     private Collection<GitRepositoryDTO> repositoryNames;
@@ -88,8 +86,9 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         }
         Iterable<GitRepositoryDTO> value = gitRepositoryPattern.getValue();
         if (!value.iterator().hasNext()) {
-            context.addValidationWarning(gitRepositoryPattern, "You must select a repository to import");
+            context.addValidationError(gitRepositoryPattern, "You must select a repository to import");
         }
+
     }
 
     @Override

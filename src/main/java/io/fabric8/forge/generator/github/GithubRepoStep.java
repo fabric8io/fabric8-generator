@@ -135,9 +135,7 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
 
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
-        NavigationResultBuilder builder = NavigationResultBuilder.create();
-        builder.add(CreateBuildConfigStep.class);
-        return builder.build();
+        return null;
     }
 
     @Override

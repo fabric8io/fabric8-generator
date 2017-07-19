@@ -35,6 +35,9 @@ import io.fabric8.forge.generator.utils.WebClientHelpers;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.ServiceNames;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -55,6 +58,8 @@ import io.fabric8.utils.DomHelper;
 import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Strings;
 import io.fabric8.utils.URLUtils;
+import io.fabric8.utils.XmlHelper;
+import io.fabric8.utils.XmlUtils;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.ui.command.UICommand;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -86,8 +91,8 @@ import javax.ws.rs.core.Response;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -95,6 +100,7 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -298,30 +304,46 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
             String webhookUrl = URLUtils.pathJoin(jenkinsUrl, "/github-webhook/");
 
+            boolean talkToJenkins = false;
+            String useJenkinsFlag = System.getenv("USE_JENKINS");
+            if (useJenkinsFlag != null && useJenkinsFlag.equalsIgnoreCase("true")) {
+                talkToJenkins = true;
+            }
 
             if (isGitHubOrganisationFolder) {
-                try {
-                    ensureJenkinsCDCredentialCreated(gitOwnerName, gitToken, jenkinsUrl, authHeader);
-                } catch (Exception e) {
-                    LOG.error("Failed to create Jenkins CD Bot credentials: " + e, e);
-                    return Results.fail("Failed to create Jenkins CD Bot credentials: " + e, e);
+                if (talkToJenkins) {
+                    try {
+                        ensureJenkinsCDCredentialCreated(gitOwnerName, gitToken, jenkinsUrl, authHeader);
+                    } catch (Exception e) {
+                        LOG.error("Failed to create Jenkins CD Bot credentials: " + e, e);
+                        return Results.fail("Failed to create Jenkins CD Bot credentials: " + e, e);
+                    }
                 }
 
                 String gitRepoPatternOrName = gitRepoPattern;
                 if (Strings.isNullOrBlank(gitRepoPatternOrName)) {
                     gitRepoPatternOrName = Strings.join(gitRepoNameList, "|");
                 }
-                try {
-                    String jobUrl = URLUtils.pathJoin(jenkinsUrl, "/job/" + gitOwnerName);
-                    if (Strings.isNotBlank(message)) {
-                        message += ". ";
+                String jobUrl = URLUtils.pathJoin(jenkinsUrl, "/job/" + gitOwnerName);
+                if (Strings.isNotBlank(message)) {
+                    message += ". ";
+                }
+                message += "Created Jenkins job: " + jobUrl;
+                if (talkToJenkins) {
+                    try {
+                        jenkinsJobUrl = jobUrl;
+                        ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, jobUrl, oauthToken, authHeader, gitOwnerName, gitRepoPatternOrName);
+                    } catch (Exception e) {
+                        LOG.error("Failed to create Jenkins Organisation job: " + e, e);
+                        return Results.fail("Failed to create Jenkins Organisation job:: " + e, e);
                     }
-                    message += "Created Jenkins job: " + jobUrl;
-                    jenkinsJobUrl = jobUrl;
-                    ensureJenkinsCDOrganisationJobCreated(jenkinsUrl, jobUrl, oauthToken, authHeader, gitOwnerName, gitRepoPatternOrName);
-                } catch (Exception e) {
-                    LOG.error("Failed to create Jenkins Organisation job: " + e, e);
-                    return Results.fail("Failed to create Jenkins Organisation job:: " + e, e);
+                } else {
+                    try {
+                        ensureJenkinsCDOrganisationConfigMapCreated(kubernetes, namespace, gitOwnerName, gitRepoPatternOrName);
+                    } catch (Exception e) {
+                        LOG.error("Failed to create Jenkins Organisation ConfigMap: " + e, e);
+                        return Results.fail("Failed to create Jenkins Organisation ConfigMap:: " + e, e);
+                    }
                 }
             } else {
                 // lets trigger the build
@@ -346,6 +368,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName, warnings);
         return Results.success(message, status);
     }
+
 
     private void ensureEnvVar(JenkinsPipelineBuildStrategy jenkinsPipelineStrategy, String envVar, String value) {
         List<EnvVar> env = jenkinsPipelineStrategy.getEnv();
@@ -692,6 +715,64 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             return null;
         } catch (IOException e) {
             return "Failed to parse result: " + e;
+        }
+    }
+
+    private ConfigMap ensureJenkinsCDOrganisationConfigMapCreated(KubernetesClient kubernetes, String namespace, String gitOwnerName, String gitRepoName) {
+
+        Resource<ConfigMap, DoneableConfigMap> configMapResource = kubernetes.configMaps().inNamespace(namespace).withName(gitOwnerName);
+        ConfigMap cm = configMapResource.get();
+        boolean update = true;
+        if (cm == null) {
+            update = false;
+            cm = new ConfigMapBuilder().withNewMetadata().withName(gitOwnerName).
+                    addToLabels("provider", "fabric8").
+                    addToLabels("openshift.io/jenkins", "job").endMetadata().withData(new HashMap<>()).build();
+        }
+
+        Map<String, String> data = cm.getData();
+        if (data == null) {
+            data = new HashMap<>();
+        }
+        data.put(ConfigMapKeys.ROOT_JOB, "true");
+        data.put(ConfigMapKeys.TRIGGER_ON_CHANGE, "true");
+
+        String configXml = data.get(ConfigMapKeys.CONFIG_XML);
+        Document document = null;
+        if (Strings.isNotBlank(configXml)) {
+            try {
+                document = XmlUtils.parseDoc(new ByteArrayInputStream(configXml.getBytes(StandardCharsets.UTF_8)));
+            } catch (Exception e) {
+                LOG.warn("Could not parse current config.xml on " + namespace + "/" + gitOwnerName + ". " + e, e);
+            }
+        }
+        if (document == null || getGithubScmNavigatorElement(document) == null) {
+            document = parseGitHubOrgJobConfig();
+            if (document == null) {
+                throw new IllegalStateException("Cannot parse the template github org job XML!");
+            }
+        }
+        setGithubOrgJobOwnerAndRepo(document, gitOwnerName, gitRepoName);
+
+        try {
+            configXml = DomHelper.toXml(document);
+        } catch (TransformerException e) {
+            throw new IllegalStateException("Cannot convert the updated config.xml back to XML! " + e, e);
+        }
+        data.put(ConfigMapKeys.CONFIG_XML, configXml);
+
+        if (update) {
+            try {
+                return configMapResource.edit().withData(data).done();
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to update the Organisation Job ConfigMap " + namespace + "/" + gitOwnerName + " due to: " + e, e);
+            }
+        } else {
+            try {
+                return configMapResource.create(cm);
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to create the Organisation Job ConfigMap " + namespace + "/" + gitOwnerName + " due to: " + e, e);
+            }
         }
     }
 

@@ -109,6 +109,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static io.fabric8.forge.generator.kubernetes.Base64Helper.base64decode;
+import static io.fabric8.forge.generator.kubernetes.KubernetesClientHelper.findDefaultNamespace;
 import static io.fabric8.project.support.BuildConfigHelper.createBuildConfig;
 
 /**
@@ -133,6 +134,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     private KubernetesClient kubernetesClient;
     private int retryTriggerBuildCount = 5;
     private boolean useUiidForBotSecret = true;
+    private List<String> namespaces;
 
     /**
      * Combines the job patterns.
@@ -162,7 +164,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
-        List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> KubernetesClientHelper.loadNamespaces(getKubernetesClient(), key));
+        this.namespaces = namespacesCache.computeIfAbsent(key, k -> KubernetesClientHelper.loadNamespaces(getKubernetesClient(), key));
 
         jenkinsSpace.setValueChoices(namespaces);
         if (!namespaces.isEmpty()) {
@@ -185,9 +187,16 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         Map<Object, Object> attributeMap = uiContext.getAttributeMap();
 
         String namespace = (String) attributeMap.get(AttributeMapKeys.NAMESPACE);
+        if (Strings.isNullOrBlank(namespace)) {
+            // we probably didn't come from the ChoosePipelineStep?
+            namespace = findDefaultNamespace(namespaces);
+        }
         String jenkinsNamespace = jenkinsSpace.getValue();
         if (Strings.isNullOrBlank(jenkinsNamespace)) {
             jenkinsNamespace = namespace;
+        }
+        if (Strings.isNullOrBlank(namespace)) {
+            return Results.fail("No attribute: " + AttributeMapKeys.NAMESPACE);
         }
         String projectName = getProjectName(uiContext);
         GitAccount details = (GitAccount) attributeMap.get(AttributeMapKeys.GIT_ACCOUNT);
@@ -297,11 +306,11 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             String jenkinsUrl = null;
             try {
                 jenkinsUrl = KubernetesHelper.getServiceURL(kubernetes, ServiceNames.JENKINS, jenkinsNamespace, "https", true);
+                discoveryNamespace = jenkinsNamespace;
             } catch (Exception e) {
                 if (!discoveryNamespace.equals(jenkinsNamespace)) {
                     try {
                         jenkinsUrl = KubernetesHelper.getServiceURL(kubernetes, ServiceNames.JENKINS, discoveryNamespace, "https", true);
-                        discoveryNamespace = jenkinsNamespace;
                     } catch (Exception e2) {
                         throw new BadTenantException("Failed to find Jenkins URL in namespaces " + discoveryNamespace + " and " + jenkinsNamespace + ": " + e, e);
                     }

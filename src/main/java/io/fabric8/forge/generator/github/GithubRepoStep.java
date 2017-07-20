@@ -9,7 +9,6 @@ package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
-import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
 import org.jboss.forge.addon.convert.Converter;

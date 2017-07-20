@@ -230,6 +230,13 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         boolean isGitHubOrganisationFolder = gitProvider.isGitHub();
         String gitToken = details.tokenOrPassword();
 
+        boolean talkToJenkins = false;
+        String useJenkinsFlag = System.getenv("USE_JENKINS");
+        if (useJenkinsFlag != null && useJenkinsFlag.equalsIgnoreCase("true")) {
+            talkToJenkins = true;
+        }
+
+
         String gitUrl = (String) attributeMap.get(AttributeMapKeys.GIT_URL);
         if (Strings.isNotBlank(gitUrl)) {
             if (addCI && isGitHubOrganisationFolder) {
@@ -287,11 +294,21 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
         if (addCI) {
             String discoveryNamespace = KubernetesClientHelper.getDiscoveryNamespace(kubernetes, jenkinsNamespace);
-            String jenkinsUrl;
+            String jenkinsUrl = null;
             try {
-                jenkinsUrl = KubernetesHelper.getServiceURL(kubernetes, ServiceNames.JENKINS, discoveryNamespace, "https", true);
+                jenkinsUrl = KubernetesHelper.getServiceURL(kubernetes, ServiceNames.JENKINS, jenkinsNamespace, "https", true);
             } catch (Exception e) {
-                return Results.fail("Failed to find Jenkins URL: " + e, e);
+                if (!discoveryNamespace.equals(jenkinsNamespace)) {
+                    try {
+                        jenkinsUrl = KubernetesHelper.getServiceURL(kubernetes, ServiceNames.JENKINS, discoveryNamespace, "https", true);
+                        discoveryNamespace = jenkinsNamespace;
+                    } catch (Exception e2) {
+                        throw new BadTenantException("Failed to find Jenkins URL in namespaces " + discoveryNamespace + " and " + jenkinsNamespace + ": " + e, e);
+                    }
+                }
+            }
+            if (Strings.isNullOrBlank(jenkinsUrl)) {
+                throw new BadTenantException("Failed to find Jenkins URL in namespace " + discoveryNamespace);
             }
 
             String botServiceAccount = "cd-bot";
@@ -303,12 +320,6 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             String authHeader = "Bearer " + oauthToken;
 
             String webhookUrl = URLUtils.pathJoin(jenkinsUrl, "/github-webhook/");
-
-            boolean talkToJenkins = false;
-            String useJenkinsFlag = System.getenv("USE_JENKINS");
-            if (useJenkinsFlag != null && useJenkinsFlag.equalsIgnoreCase("true")) {
-                talkToJenkins = true;
-            }
 
             if (isGitHubOrganisationFolder) {
                 if (talkToJenkins) {
@@ -385,12 +396,12 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     }
 
 
-    private void ensureCDGihubSecretExists(OpenShiftClient openShiftClient, String namespace, String gitOwnerName, String gitToken) {
+    private void ensureCDGihubSecretExists(KubernetesClient kubernetesClient, String namespace, String gitOwnerName, String gitToken) {
         String secretName = "cd-github";
         String username = Base64Helper.base64encode(gitOwnerName);
         String password = Base64Helper.base64encode(gitToken);
         Secret secret = null;
-        Resource<Secret, DoneableSecret> secretResource = openShiftClient.secrets().inNamespace(namespace).withName(secretName);
+        Resource<Secret, DoneableSecret> secretResource = kubernetesClient.secrets().inNamespace(namespace).withName(secretName);
         try {
             secret = secretResource.get();
         } catch (Exception e) {

@@ -56,11 +56,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -95,6 +97,26 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     private String namespace = KubernetesHelper.defaultNamespace();
 
     private boolean hasJenkinsFile;
+
+    private static Element getGrandParentElement(Element node) {
+        Node parentNode = node.getParentNode();
+        if (parentNode != null) {
+            Node grandParent = parentNode.getParentNode();
+            if (grandParent instanceof Element) {
+                Element element = (Element) grandParent;
+                return element;
+            }
+        }
+        return null;
+    }
+
+    private static String getGrandParentElementName(Element node) {
+        Element element = getGrandParentElement(node);
+        if (element != null) {
+            return element.getTagName();
+        }
+        return null;
+    }
 
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
@@ -189,7 +211,6 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         return cachedSpaces.getSpaces();
     }
 
-
     private boolean hasLocalJenkinsFile(UIContext context, Project project) {
         File jenkinsFile = CommandHelpers.getProjectContextFile(context, project, "Jenkinsfile");
         boolean hasJenkinsFile = Files.isFile(jenkinsFile);
@@ -236,9 +257,12 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         return Results.success("Added Jenkinsfile to project", status);
     }
 
-
     private void updatePomVersions(UIContext uiContext, StatusDTO status, File basedir) {
         File pom = new File(basedir, "pom.xml");
+        updatePomVersions(pom, status, getSpaceId());
+    }
+
+    public static void updatePomVersions(File pom, StatusDTO status, String spaceId) {
         if (pom.exists() && pom.isFile()) {
             Document doc;
             try {
@@ -247,19 +271,111 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                 status.warning(LOG, "Cannot parse pom.xml: " + e, e);
                 return;
             }
-            Element properties = DomHelper.firstChild(doc.getDocumentElement(), "properties");
+            Element rootElement = doc.getDocumentElement();
+            NodeList plugins = rootElement.getElementsByTagName("plugin");
+            Set<String> fmpVersionProperties = new HashSet<>();
+            Set<String> fmpVersionPropertiesLazyCreate = new HashSet<>();
+            List<Element> fmpPlugins = new ArrayList<>();
+            List<Element> fmpPluginsWithVersion = new ArrayList<>();
+
+            String fmpVersion = VersionHelper.fabric8MavenPluginVersion();
+            boolean update = false;
+
+            for (int i = 0, size = plugins.getLength(); i < size; i++) {
+                Node item = plugins.item(i);
+                if (item instanceof Element) {
+                    Element element = (Element) item;
+                    if ("fabric8-maven-plugin".equals(DomHelper.firstChildTextContent(element, "artifactId"))) {
+                        String version = DomHelper.firstChildTextContent(element, "version");
+                        if (version != null) {
+                            fmpPluginsWithVersion.add(element);
+                            if (version.startsWith("${") && version.endsWith("}")) {
+                                String versionProperty = version.substring(2, version.length() - 1);
+                                fmpVersionPropertiesLazyCreate.add(versionProperty);
+                            } else {
+                                if (updateFirstChild(element, "version", fmpVersion)) {
+                                    update = true;
+                                }
+                            }
+                        } else {
+                            fmpPlugins.add(element);
+                        }
+                    }
+                }
+            }
+
+
+            // Lets add a new version element to all fmp <plugin> which don't have a corresponding versioned
+            // <pluginManagement> entry in the same <build>
+            for (Element fmpPlugin : fmpPlugins) {
+                Element grandParent = getGrandParentElement(fmpPlugin);
+                if (grandParent == null) {
+                    continue;
+                }
+                boolean addVersion = false;
+                if ("pluginManagement".equals(grandParent.getTagName())) {
+                    addVersion = true;
+                } else if ("build".equals(grandParent.getTagName())) {
+                    boolean found = false;
+                    for (Element pluginWithVersion : fmpPluginsWithVersion) {
+                        Element pluginVersionGrandParent = getGrandParentElement(pluginWithVersion);
+                        if (pluginVersionGrandParent != null && "pluginManagement".equals(pluginVersionGrandParent.getTagName())) {
+                            if (pluginVersionGrandParent.getParentNode() == grandParent) {
+                                // there's a pluginManagement version specified for this
+                                found = true;
+                                break;
+                            }
+
+                        }
+                    }
+                    if (!found) {
+                        addVersion = true;
+                    }
+                }
+                if (addVersion) {
+                    // lets add an explicit version as we can't find a plugin-management one
+                    Element version = doc.createElement("version");
+                    version.setTextContent(fmpVersion);
+                    Element artifactId = DomHelper.firstChild(fmpPlugin, "artifactId");
+                    Node nextSibling = artifactId.getNextSibling();
+                    String text = getPreviousText(artifactId);
+                    fmpPlugin.insertBefore(doc.createTextNode(text), nextSibling);
+                    fmpPlugin.insertBefore(version, nextSibling);
+                    update = true;
+                }
+            }
+
+            List<String> defaultVersionProperties = Arrays.asList("fabric8.maven.plugin.version", "fabric8-maven-plugin.version");
+            for (String property : defaultVersionProperties) {
+                if (!fmpVersionPropertiesLazyCreate.contains(property)) {
+                    fmpVersionProperties.add(property);
+                }
+            }
+
+            Element properties = DomHelper.firstChild(rootElement, "properties");
+            if (properties == null && !fmpVersionPropertiesLazyCreate.isEmpty()) {
+                properties = DomHelper.addChildElement(rootElement, "properties");
+            }
             if (properties != null) {
-                boolean update = false;
                 if (updateFirstChild(properties, "fabric8.version", VersionHelper.fabric8Version())) {
                     update = true;
                 }
-                if (updateFirstChild(properties, "fabric8.maven.plugin.version", VersionHelper.fabric8MavenPluginVersion())) {
-                    update = true;
+                for (String property : fmpVersionPropertiesLazyCreate) {
+                    if (updateFirstChild(properties, property, fmpVersion)) {
+                        update = true;
+                    } else {
+                        if (DomHelper.firstChild(properties, property) == null) {
+                            DomHelper.addChildElement(properties, property, fmpVersion);
+                            update = true;
+                        }
+                    }
                 }
-                if (updateFirstChild(properties, "fabric8-maven-plugin.version", VersionHelper.fabric8MavenPluginVersion())) {
-                    update = true;
+                for (String property : fmpVersionProperties) {
+                    if (updateFirstChild(properties, property, fmpVersion)) {
+                        update = true;
+                    }
                 }
-                if (ensureSpaceLabelAddedToPom(doc, getSpaceId())) {
+                if (ensureSpaceLabelAddedToPom(doc, spaceId)) {
                     update = true;
                 }
                 if (update) {
@@ -274,6 +390,23 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         }
     }
 
+    /**
+     * Returns the combined text of previous nodes of the given element
+     */
+    private static String getPreviousText(Node node) {
+        StringBuilder builder = new StringBuilder();
+        while (node != null) {
+            node = node.getPreviousSibling();
+            if (node instanceof Text) {
+                Text textNode = (Text) node;
+                builder.append(textNode.getWholeText());
+            } else {
+                break;
+            }
+        }
+        return builder.toString();
+    }
+
     protected String getSpaceId() {
         SpaceDTO spaceDTO = labelSpace.getValue();
         if (spaceDTO != null) {
@@ -282,7 +415,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         return null;
     }
 
-    private boolean ensureSpaceLabelAddedToPom(Document document, String spaceId) {
+    private static boolean ensureSpaceLabelAddedToPom(Document document, String spaceId) {
         if (document != null && Strings.isNotBlank(spaceId)) {
             NodeList plugins = document.getElementsByTagName("plugin");
             if (plugins != null) {
@@ -309,7 +442,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         return false;
     }
 
-    private boolean updateFirstChild(Element parentElement, String elementName, String value) {
+    private static boolean updateFirstChild(Element parentElement, String elementName, String value) {
         if (parentElement != null) {
             Element element = DomHelper.firstChild(parentElement, elementName);
             if (element != null) {

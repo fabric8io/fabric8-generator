@@ -230,7 +230,9 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         Controller controller = new Controller(kubernetesClient);
         controller.setNamespace(namespace);
         OpenShiftClient openShiftClient = controller.getOpenShiftClientOrNull();
-
+        if (openShiftClient == null) {
+            return Results.fail("Could not create OpenShiftClient. Maybe the Kubernetes server version is older than 1.7?");
+        }
 
         String jenkinsJobUrl = null;
         String cheStackId = null;
@@ -249,7 +251,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         String gitUrl = (String) attributeMap.get(AttributeMapKeys.GIT_URL);
         if (Strings.isNotBlank(gitUrl)) {
             if (addCI && isGitHubOrganisationFolder) {
-                ensureCDGihubSecretExists(openShiftClient, namespace, gitOwnerName, gitToken);
+                ensureCDGihubSecretExists(kubernetesClient, namespace, gitOwnerName, gitToken);
             }
             try {
                 BuildConfig oldBC = openShiftClient.buildConfigs().inNamespace(namespace).withName(projectName).get();
@@ -280,9 +282,17 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
 
             BuildConfig buildConfig = createBuildConfig(kubernetesClient, namespace, projectName, gitUrl, annotations);
-            SpaceDTO spaceDTO = (SpaceDTO) attributeMap.get(AttributeMapKeys.SPACE);
-            if (spaceDTO != null) {
-                String spaceId = spaceDTO.getId();
+            String spaceId = null;
+            Object spaceValue = attributeMap.get(AttributeMapKeys.SPACE);
+            if (spaceValue instanceof SpaceDTO) {
+                SpaceDTO spaceDTO = (SpaceDTO) spaceValue;
+                spaceId = spaceDTO.getId();
+            } else if (spaceValue instanceof String) {
+                spaceId = (String) spaceValue;
+            }
+            LOG.info("Got labelSpace: " + spaceId + " for new app " + projectName + " for user " + gitOwnerName);
+
+            if (Strings.isNotBlank(spaceId)) {
                 KubernetesHelper.getOrCreateLabels(buildConfig).put("space", spaceId);
                 BuildConfigSpec spec = buildConfig.getSpec();
                 if (spec != null) {

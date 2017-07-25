@@ -41,6 +41,7 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
+import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
@@ -88,7 +89,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     private UISelectOne<String> kubernetesSpace;
     @Inject
     @WithAttributes(label = "Space", description = "The space for the new app")
-    private UISelectOne<SpaceDTO> labelSpace;
+    private UIInput<String> labelSpace;
     @Inject
     private JenkinsPipelineLibrary jenkinsPipelineLibrary;
     @Inject
@@ -193,8 +194,10 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             builder.add(kubernetesSpace);
         }
 
+/*
         labelSpace.setValueChoices(() -> loadCachedSpaces(key));
         labelSpace.setItemLabelConverter(value -> value.getLabel());
+*/
         builder.add(labelSpace);
 
 
@@ -220,18 +223,31 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
 
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
-        Map<Object, Object> attributeMap = context.getUIContext().getAttributeMap();
-        attributeMap.put(AttributeMapKeys.NAMESPACE, kubernetesSpace.getValue());
-        attributeMap.put(AttributeMapKeys.SPACE, labelSpace.getValue());
+        UIContext uiContext = context.getUIContext();
+        storeAttributes(uiContext);
         return null;
+    }
+
+    protected void storeAttributes(UIContext uiContext) {
+        Map<Object, Object> attributeMap = uiContext.getAttributeMap();
+        String ns = kubernetesSpace.getValue();
+        String space = labelSpace.getValue();
+        if (Strings.isNotBlank(ns)) {
+            attributeMap.put(AttributeMapKeys.NAMESPACE, ns);
+        }
+        if (Strings.isNotBlank(space)) {
+            attributeMap.put(AttributeMapKeys.SPACE, space);
+        }
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
         UIContext uiContext = context.getUIContext();
-        context.getUIContext().getAttributeMap().put("hasJenkinsFile", hasJenkinsFile);
+        storeAttributes(uiContext);
+        Map<Object, Object> attributeMap = uiContext.getAttributeMap();
+        attributeMap.put("hasJenkinsFile", hasJenkinsFile);
         PipelineDTO value = pipeline.getValue();
-        context.getUIContext().getAttributeMap().put("selectedPipeline", value);
+        attributeMap.put("selectedPipeline", value);
         File basedir = getSelectionFolder(uiContext);
         StatusDTO status = new StatusDTO();
         if (basedir == null || !basedir.isDirectory()) {
@@ -408,11 +424,14 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     }
 
     protected String getSpaceId() {
+        return labelSpace.getValue();
+/*
         SpaceDTO spaceDTO = labelSpace.getValue();
         if (spaceDTO != null) {
             return spaceDTO.getId();
         }
         return null;
+*/
     }
 
     private static boolean ensureSpaceLabelAddedToPom(Document document, String spaceId) {

@@ -34,6 +34,7 @@ import io.fabric8.forge.generator.utils.PomFileXml;
 import io.fabric8.forge.generator.utils.WebClientHelpers;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.api.KubernetesNames;
 import io.fabric8.kubernetes.api.ServiceNames;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -750,12 +751,13 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
     private ConfigMap ensureJenkinsCDOrganisationConfigMapCreated(KubernetesClient kubernetes, String namespace, String gitOwnerName, String gitRepoName) {
 
-        Resource<ConfigMap, DoneableConfigMap> configMapResource = kubernetes.configMaps().inNamespace(namespace).withName(gitOwnerName);
+        String configMapName = KubernetesNames.convertToKubernetesName(gitOwnerName, false);
+        Resource<ConfigMap, DoneableConfigMap> configMapResource = kubernetes.configMaps().inNamespace(namespace).withName(configMapName);
         ConfigMap cm = configMapResource.get();
         boolean update = true;
         if (cm == null) {
             update = false;
-            cm = new ConfigMapBuilder().withNewMetadata().withName(gitOwnerName).
+            cm = new ConfigMapBuilder().withNewMetadata().withName(configMapName).
                     addToLabels("provider", "fabric8").
                     addToLabels("openshift.io/jenkins", "job").endMetadata().withData(new HashMap<>()).build();
         }
@@ -773,7 +775,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             try {
                 document = XmlUtils.parseDoc(new ByteArrayInputStream(configXml.getBytes(StandardCharsets.UTF_8)));
             } catch (Exception e) {
-                LOG.warn("Could not parse current config.xml on " + namespace + "/" + gitOwnerName + ". " + e, e);
+                LOG.warn("Could not parse current config.xml on " + namespace + "/" + configMapName + ". " + e, e);
             }
         }
         if (document == null || getGithubScmNavigatorElement(document) == null) {
@@ -795,13 +797,13 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             try {
                 return configMapResource.edit().withData(data).done();
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to update the Organisation Job ConfigMap " + namespace + "/" + gitOwnerName + " due to: " + e, e);
+                throw new IllegalStateException("Failed to update the Organisation Job ConfigMap " + namespace + "/" + configMapName + " due to: " + e, e);
             }
         } else {
             try {
                 return configMapResource.create(cm);
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to create the Organisation Job ConfigMap " + namespace + "/" + gitOwnerName + " due to: " + e, e);
+                throw new IllegalStateException("Failed to create the Organisation Job ConfigMap " + namespace + "/" + configMapName + " due to: " + e, e);
             }
         }
     }

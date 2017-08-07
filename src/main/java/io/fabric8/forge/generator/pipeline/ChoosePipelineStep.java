@@ -73,6 +73,8 @@ import java.util.Set;
 
 import static io.fabric8.forge.generator.che.CheStackDetector.parseXmlFile;
 import static io.fabric8.forge.generator.kubernetes.KubernetesClientHelper.findDefaultNamespace;
+import static io.fabric8.forge.generator.utils.DomUtils.addText;
+import static io.fabric8.forge.generator.utils.DomUtils.createChild;
 import static io.fabric8.forge.generator.utils.DomUtils.getOrCreateChild;
 import static io.fabric8.kubernetes.api.KubernetesHelper.loadYaml;
 
@@ -322,11 +324,14 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             String fmpVersion = VersionHelper.fabric8MavenPluginVersion();
             boolean update = false;
 
+            boolean foundFmpPlugin = false;
+
             for (int i = 0, size = plugins.getLength(); i < size; i++) {
                 Node item = plugins.item(i);
                 if (item instanceof Element) {
                     Element element = (Element) item;
                     if ("fabric8-maven-plugin".equals(DomHelper.firstChildTextContent(element, "artifactId"))) {
+                        foundFmpPlugin = true;
                         String version = DomHelper.firstChildTextContent(element, "version");
                         if (version != null) {
                             fmpPluginsWithVersion.add(element);
@@ -345,6 +350,24 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                 }
             }
 
+            if (!foundFmpPlugin) {
+                // lets add a new fmp plugin element
+                String separator = "\n";
+                Element build = getOrCreateChild(rootElement, "build", separator);
+                separator += "  ";
+                Element newPlugins = getOrCreateChild(build, "plugins", separator);
+                separator += "  ";
+                Element plugin = createChild(newPlugins, "plugin", separator);
+                separator += "  ";
+                addText(plugin, separator);
+                DomHelper.addChildElement(plugin, "groupId", "io.fabric8");
+                addText(plugin, separator);
+                DomHelper.addChildElement(plugin, "artifactId", "fabric8-maven-plugin");
+                addText(plugin, separator);
+                DomHelper.addChildElement(plugin, "version", fmpVersion);
+                addText(plugin, separator);
+                update = true;
+            }
 
             // Lets add a new version element to all fmp <plugin> which don't have a corresponding versioned
             // <pluginManagement> entry in the same <build>
@@ -468,7 +491,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                     if (item instanceof Element) {
                         Element element = (Element) item;
                         if ("fabric8-maven-plugin".equals(DomHelper.firstChildTextContent(element, "artifactId"))) {
-                            String indent = "\n        ";
+                            String indent = "\n      ";
                             Element configuration = getOrCreateChild(element, "configuration", indent);
                             Element resources = getOrCreateChild(configuration, "resources", indent + "  ");
                             Element labels = getOrCreateChild(resources, "labels", indent + "    ");

@@ -69,4 +69,34 @@ public class DomUtils {
         }
         return child;
     }
+
+    /**
+     * Creates a new child of the given element adding the text after the new node
+     */
+    public static Element createChild(Element element, String name, String text) {
+        Document doc = element.getOwnerDocument();
+        if (text != null) {
+            Text textNode = doc.createTextNode(text + "  ");
+            element.appendChild(textNode);
+        }
+        Element child = doc.createElement(name);
+        element.appendChild(child);
+        if (text != null) {
+            Text textNode = doc.createTextNode(text);
+            element.appendChild(textNode);
+        }
+        return child;
+    }
+
+    /**
+     * Adds the given text to the given node
+     */
+    public static Text addText(Element element, String text) {
+        Document doc = element.getOwnerDocument();
+        Text textNode = doc.createTextNode(text + "  ");
+        element.appendChild(textNode);
+        return textNode;
+    }
+
+
 }

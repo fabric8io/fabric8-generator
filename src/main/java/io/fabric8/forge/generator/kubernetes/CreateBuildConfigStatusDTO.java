@@ -31,19 +31,21 @@ public class CreateBuildConfigStatusDTO {
     private String cheStackId;
     private String organisationJenkinsJobUrl;
     private List<String> gitRepositoryNames;
+    private List<GitRepoDTO> gitRepositories;
     private String gitOwnerName;
     private List<String> warnings;
 
     public CreateBuildConfigStatusDTO() {
     }
 
-    public CreateBuildConfigStatusDTO(String namespace, String buildConfigName, String gitUrl, String cheStackId, String organisationJenkinsJobUrl, List<String> gitRepositoryNames, String gitOwnerName, List<String> warnings) {
+    public CreateBuildConfigStatusDTO(String namespace, String buildConfigName, String gitUrl, String cheStackId, String organisationJenkinsJobUrl, List<String> gitRepositoryNames, List<GitRepoDTO> gitRepositories, String gitOwnerName, List<String> warnings) {
         this.namespace = namespace;
         this.buildConfigName = buildConfigName;
         this.gitUrl = gitUrl;
         this.cheStackId = cheStackId;
         this.organisationJenkinsJobUrl = organisationJenkinsJobUrl;
         this.gitRepositoryNames = gitRepositoryNames;
+        this.gitRepositories = gitRepositories;
         this.gitOwnerName = gitOwnerName;
         this.warnings = warnings;
     }
@@ -123,5 +125,13 @@ public class CreateBuildConfigStatusDTO {
 
     public void setWarnings(List<String> warnings) {
         this.warnings = warnings;
+    }
+
+    public List<GitRepoDTO> getGitRepositories() {
+        return gitRepositories;
+    }
+
+    public void setGitRepositories(List<GitRepoDTO> gitRepositories) {
+        this.gitRepositories = gitRepositories;
     }
 }

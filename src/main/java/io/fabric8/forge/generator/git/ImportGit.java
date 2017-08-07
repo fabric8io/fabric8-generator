@@ -17,6 +17,7 @@
 package io.fabric8.forge.generator.git;
 
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
+import io.fabric8.forge.generator.pipeline.ChoosePipelineStep;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
@@ -37,6 +38,9 @@ public class ImportGit extends AbstractGitProviderCommand {
     @Override
     protected void addNextStep(NavigationResultBuilder builder, GitProvider provider) {
         provider.addImportRepositoriesSteps(builder);
+        provider.addGitCloneStep(builder);
+        builder.add(ChoosePipelineStep.class);
+        builder.add(GitCommitAndPushStep.class);
         builder.add(CreateBuildConfigStep.class);
     }
 

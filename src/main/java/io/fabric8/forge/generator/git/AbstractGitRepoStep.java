@@ -19,6 +19,7 @@ package io.fabric8.forge.generator.git;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.devops.ProjectConfigs;
 import io.fabric8.forge.generator.cache.CacheFacade;
+import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
 import io.fabric8.project.support.GitUtils;
 import io.fabric8.project.support.UserDetails;
@@ -86,8 +87,12 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
     }
 
     public void initializeUI(final UIBuilder builder) throws Exception {
-        this.accountCache = cacheManager.getCache(accountsCacheKey);
-        this.organisationsCache = cacheManager.getCache(organisationsCacheKey);
+        if (accountsCacheKey != null) {
+            this.accountCache = cacheManager.getCache(accountsCacheKey);
+        }
+        if (organisationsCacheKey != null) {
+            this.organisationsCache = cacheManager.getCache(organisationsCacheKey);
+        }
     }
 
     public void importNewGitProject(UserDetails userDetails, File basedir, String message, String gitUrl)
@@ -97,6 +102,10 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
         initCommand.setDirectory(basedir);
         Git git = initCommand.call();
         LOG.info("Initialised an empty git configuration repo at {}", basedir.getAbsolutePath());
+        gitAddCommitAndPush(git, gitUrl, userDetails, basedir, message);
+    }
+
+    protected void gitAddCommitAndPush(Git git, String gitUrl, UserDetails userDetails, File basedir, String message) throws GitAPIException {
         PersonIdent personIdent = userDetails.createPersonIdent();
 
         GitUtils.configureBranch(git, branch, origin, gitUrl);

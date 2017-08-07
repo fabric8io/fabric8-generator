@@ -25,6 +25,7 @@ import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.che.CheStack;
 import io.fabric8.forge.generator.che.CheStackDetector;
 import io.fabric8.forge.generator.git.GitAccount;
+import io.fabric8.forge.generator.git.GitClonedRepoDetails;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
@@ -59,7 +60,6 @@ import io.fabric8.utils.DomHelper;
 import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Strings;
 import io.fabric8.utils.URLUtils;
-import io.fabric8.utils.XmlHelper;
 import io.fabric8.utils.XmlUtils;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.ui.command.UICommand;
@@ -248,9 +248,15 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             talkToJenkins = true;
         }
 
+        List<GitRepoDTO> gitRepos = getGitRepos(uiContext, projectName);
+        for (GitRepoDTO gitRepo : gitRepos) {
+            String gitUrl = gitRepo.getUrl();
+            projectName = KubernetesNames.convertToKubernetesName(gitRepo.getRepoName(), false);
+            if (Strings.isNullOrBlank(gitUrl) || Strings.isNullOrBlank(projectName)) {
+                LOG.warn("Invalid GitRepo " + gitRepo);
+                continue;
+            }
 
-        String gitUrl = (String) attributeMap.get(AttributeMapKeys.GIT_URL);
-        if (Strings.isNotBlank(gitUrl)) {
             if (addCI && isGitHubOrganisationFolder) {
                 ensureCDGihubSecretExists(kubernetesClient, namespace, gitOwnerName, gitToken);
             }
@@ -396,8 +402,39 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
             message += ". ";
         }
-        CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace ,projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitOwnerName, warnings);
+        String gitUrl = null;
+        if (!gitRepos.isEmpty()) {
+            gitUrl = gitRepos.get(0).getUrl();
+        }
+        CreateBuildConfigStatusDTO status = new CreateBuildConfigStatusDTO(namespace, projectName, gitUrl, cheStackId, jenkinsJobUrl, gitRepoNameList, gitRepos, gitOwnerName, warnings);
         return Results.success(message, status);
+    }
+
+    private List<GitRepoDTO> getGitRepos(UIContext uiContext, String gitRepoName) {
+        List<GitRepoDTO> answer = new ArrayList<>();
+        Map<Object, Object> attributeMap = uiContext.getAttributeMap();
+
+        // lets handle repos from the ImportGit / GitCloneStep steps
+        List<GitClonedRepoDetails> clonedRepos = (List<GitClonedRepoDetails>) attributeMap.get(AttributeMapKeys.GIT_CLONED_REPOS);
+        if (clonedRepos != null) {
+            for (GitClonedRepoDetails clonedRepo : clonedRepos) {
+                addGitURl(answer, clonedRepo.getGitRepoName(), clonedRepo.getGitUrl());
+            }
+        }
+        String gitUrl = (String) attributeMap.get(AttributeMapKeys.GIT_URL);
+        addGitURl(answer, gitRepoName, gitUrl);
+        return answer;
+    }
+
+    private static void addGitURl(List<GitRepoDTO> answer, String repoName, String gitUrl) {
+        if (gitUrl != null) {
+            for (GitRepoDTO repoDTO : answer) {
+                if (gitUrl.equals(repoDTO.getUrl())) {
+                    return;
+                }
+            }
+            answer.add(new GitRepoDTO(repoName, gitUrl));
+        }
     }
 
 

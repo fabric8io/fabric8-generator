@@ -23,6 +23,12 @@ import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.kubernetes.api.ServiceNames;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.project.support.GitUtils;
+import io.fabric8.project.support.UserDetails;
+import org.eclipse.jgit.api.CloneCommand;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,4 +125,21 @@ public abstract class GitProvider {
 
     public abstract void registerWebHook(GitAccount details, WebHookDetails webhook) throws IOException;
 
+    public Git cloneRepo(CloneRepoAttributes attributes) throws GitAPIException {
+        CloneCommand command = Git.cloneRepository();
+        String gitUri = attributes.getUri();
+
+        UserDetails userDetails = attributes.getUserDetails();
+        CredentialsProvider credentialsProvider = userDetails.createCredentialsProvider();
+        GitUtils.configureCommand(command, credentialsProvider, userDetails.getSshPrivateKey(), userDetails.getSshPublicKey());
+
+        command = command.setCredentialsProvider(credentialsProvider).
+                setCloneAllBranches(attributes.isCloneAll()).
+                setURI(gitUri).
+                setDirectory(attributes.getDirectory()).setRemote(attributes.getRemote());
+
+        return command.call();
+    }
+
+    public abstract void addGitCloneStep(NavigationResultBuilder builder);
 }

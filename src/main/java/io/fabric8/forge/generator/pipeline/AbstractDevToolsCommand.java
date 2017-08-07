@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 import static io.fabric8.forge.generator.AttributeMapKeys.PROJECT_DIRECTORY_FILE;
@@ -134,5 +135,15 @@ public abstract class AbstractDevToolsCommand extends AbstractProjectCommand {
             }
         }
         return null;
+    }
+
+    protected void removeTemporaryFiles(File basedir) {
+        if (basedir != null && basedir.exists()) {
+            try {
+                Files.recursiveDelete(basedir);
+            } catch (Throwable e) {
+                log.warn("Failed to delete " + basedir + " due to: " + e, e);
+            }
+        }
     }
 }

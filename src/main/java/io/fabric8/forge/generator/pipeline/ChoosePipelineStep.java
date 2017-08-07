@@ -22,6 +22,7 @@ import io.fabric8.forge.addon.utils.StopWatch;
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
+import io.fabric8.forge.generator.git.GitClonedRepoDetails;
 import io.fabric8.forge.generator.kubernetes.CachedSpaces;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.forge.generator.kubernetes.SpaceDTO;
@@ -248,29 +249,53 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         attributeMap.put("hasJenkinsFile", hasJenkinsFile);
         PipelineDTO value = pipeline.getValue();
         attributeMap.put("selectedPipeline", value);
-        File basedir = getSelectionFolder(uiContext);
+        List<File> folders = getProjectFolders(uiContext);
         StatusDTO status = new StatusDTO();
-        if (basedir == null || !basedir.isDirectory()) {
-            status.warning(LOG, "Cannot copy the pipeline to the project as no basedir!");
-        } else {
-            if (value != null) {
-                String pipelinePath = value.getValue();
-                if (Strings.isNullOrBlank(pipelinePath)) {
-                    status.warning(LOG, "Cannot copy the pipeline to the project as the pipeline has no Jenkinsfile configured!");
-                } else {
-                    String pipelineText = getPipelineContent(pipelinePath, context.getUIContext());
-                    if (Strings.isNullOrBlank(pipelineText)) {
-                        status.warning(LOG, "Cannot copy the pipeline to the project as no pipeline text could be loaded!");
+        if (folders.isEmpty()) {
+            status.warning(LOG, "Cannot copy the pipeline to the project as no folders found!");
+        }
+        for (File basedir : folders) {
+            if (basedir == null || !basedir.isDirectory()) {
+                status.warning(LOG, "Cannot copy the pipeline to the project as no basedir!");
+            } else {
+                if (value != null) {
+                    String pipelinePath = value.getValue();
+                    if (Strings.isNullOrBlank(pipelinePath)) {
+                        status.warning(LOG, "Cannot copy the pipeline to the project as the pipeline has no Jenkinsfile configured!");
                     } else {
-                        File newFile = new File(basedir, ProjectConfigs.LOCAL_FLOW_FILE_NAME);
-                        Files.writeToFile(newFile, pipelineText.getBytes());
-                        LOG.debug("Written Jenkinsfile to " + newFile);
+                        String pipelineText = getPipelineContent(pipelinePath, context.getUIContext());
+                        if (Strings.isNullOrBlank(pipelineText)) {
+                            status.warning(LOG, "Cannot copy the pipeline to the project as no pipeline text could be loaded!");
+                        } else {
+                            File newFile = new File(basedir, ProjectConfigs.LOCAL_FLOW_FILE_NAME);
+                            Files.writeToFile(newFile, pipelineText.getBytes());
+                            LOG.debug("Written Jenkinsfile to " + newFile);
+                        }
                     }
                 }
+                updatePomVersions(uiContext, status, basedir);
             }
-            updatePomVersions(uiContext, status, basedir);
         }
         return Results.success("Added Jenkinsfile to project", status);
+    }
+
+    private List<File> getProjectFolders(UIContext uiContext) {
+        List<File> answer = new ArrayList<>();
+        Map<Object, Object> attributeMap = uiContext.getAttributeMap();
+        // lets handle folders from the ImportGit / GitCloneStep steps
+        List<GitClonedRepoDetails> clonedRepos = (List<GitClonedRepoDetails>) attributeMap.get(AttributeMapKeys.GIT_CLONED_REPOS);
+        if (clonedRepos != null) {
+            for (GitClonedRepoDetails clonedRepo : clonedRepos) {
+                answer.add(clonedRepo.getDirectory());
+            }
+        }
+        if (answer.isEmpty()) {
+            File basedir = getSelectionFolder(uiContext);
+            if (basedir != null) {
+                answer.add(basedir);
+            }
+        }
+        return answer;
     }
 
     private void updatePomVersions(UIContext uiContext, StatusDTO status, File basedir) {

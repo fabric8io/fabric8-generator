@@ -365,7 +365,18 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                 DomHelper.addChildElement(plugin, "artifactId", "fabric8-maven-plugin");
                 addText(plugin, separator);
                 DomHelper.addChildElement(plugin, "version", fmpVersion);
-                addText(plugin, separator);
+                Element executions = createChild(plugin, "executions", separator);
+                separator += "  ";
+                Element execution = createChild(executions, "execution", separator);
+                separator += "  ";
+                Element goals = createChild(execution, "goals", separator);
+                String closeSep = separator;
+                separator += "  ";
+                addText(goals, separator);
+                DomHelper.addChildElement(goals, "goal", "resource");
+                addText(goals, separator);
+                DomHelper.addChildElement(goals, "goal", "build");
+                addText(goals, closeSep);
                 update = true;
             }
 

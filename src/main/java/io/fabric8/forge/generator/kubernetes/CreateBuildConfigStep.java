@@ -219,6 +219,12 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 gitRepoNameList.add(gitRepoName);
             }
         }
+        if (Strings.isNullOrBlank(gitRepoNameValue) && !gitRepoNameList.isEmpty()) {
+            gitRepoNameValue = gitRepoNameList.get(0);
+        }
+        if (Strings.isNullOrBlank(gitRepoNameValue)) {
+            gitRepoNameValue = projectName;
+        }
         String gitOwnerName = (String) attributeMap.get(AttributeMapKeys.GIT_OWNER_NAME);
         if (Strings.isNullOrBlank(gitOwnerName)) {
             gitOwnerName = details.getUsername();
@@ -248,9 +254,10 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             talkToJenkins = true;
         }
 
-        List<GitRepoDTO> gitRepos = getGitRepos(uiContext, projectName);
+        List<GitRepoDTO> gitRepos = getGitRepos(uiContext, gitRepoNameValue);
         for (GitRepoDTO gitRepo : gitRepos) {
             String gitUrl = gitRepo.getUrl();
+            gitRepoNameValue = gitRepo.getRepoName();
             projectName = KubernetesNames.convertToKubernetesName(gitRepo.getRepoName(), false);
             if (Strings.isNullOrBlank(gitUrl) || Strings.isNullOrBlank(projectName)) {
                 LOG.warn("Invalid GitRepo " + gitRepo);

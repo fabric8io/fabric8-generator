@@ -118,6 +118,7 @@ import static io.fabric8.project.support.BuildConfigHelper.createBuildConfig;
  */
 public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UICommand {
     protected static final String GITHUB_SCM_NAVIGATOR_ELEMENT = "org.jenkinsci.plugins.github__branch__source.GitHubSCMNavigator";
+    protected static final String REGEX_SCM_SOURCE_FILTER_TRAIT_ELEMENT = "jenkins.scm.impl.trait.RegexSCMSourceFilterTrait";
 
     private static final transient Logger LOG = LoggerFactory.getLogger(CreateBuildConfigStep.class);
     protected Cache<String, List<String>> namespacesCache;
@@ -920,7 +921,20 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
 
         Element repoOwner = DomUtils.mandatoryFirstChild(githubNavigator, "repoOwner");
-        Element pattern = DomUtils.mandatoryFirstChild(githubNavigator, "pattern");
+        Element pattern = DomHelper.firstChild(githubNavigator, "pattern");
+        if (pattern == null) {
+            // lets check for the new plugin XML
+            Element traitsElement = DomHelper.firstChild(githubNavigator, "traits");
+            if (traitsElement != null) {
+                Element sourceFilterElement = DomHelper.firstChild(traitsElement, REGEX_SCM_SOURCE_FILTER_TRAIT_ELEMENT);
+                if (sourceFilterElement != null) {
+                    pattern = DomHelper.firstChild(sourceFilterElement, "regex");
+                }
+            }
+        }
+        if (pattern == null) {
+            throw new IllegalArgumentException("No <pattern> or <traits><" + REGEX_SCM_SOURCE_FILTER_TRAIT_ELEMENT + "><regex> found in element <" + GITHUB_SCM_NAVIGATOR_ELEMENT + "> for the github organisation job!");
+        }
 
         String newPattern = combineJobPattern(pattern.getTextContent(), gitRepoName);
         DomUtils.setElementText(repoOwner, gitOwnerName);

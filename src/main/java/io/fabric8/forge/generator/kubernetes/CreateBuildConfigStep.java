@@ -93,11 +93,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -285,7 +281,19 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 annotations.put(Annotations.JENKINS_JOB_PATH, "" + gitOwnerName + "/" + gitRepoNameValue + "/master");
             }
             org.jboss.forge.addon.projects.Project project = getCurrentSelectedProject(uiContext);
-            PomFileXml pomFile = MavenHelpers.findPom(uiContext, project);
+            File pom = null;
+            if (project == null) { // if no project (only quickstart flow), we are in "import repo" flow
+                Object obj = attributeMap.get(AttributeMapKeys.GIT_CLONED_REPOS); // let's find the cloned repo directory
+                if ((obj != null) && (obj instanceof ArrayList)) {
+                    ArrayList<GitClonedRepoDetails> list = (ArrayList<GitClonedRepoDetails>)obj;
+                    if (list.size() > 0) {
+                        GitClonedRepoDetails repoDetails = list.get(0);
+                        File dir = repoDetails.getAttributes().getDirectory();
+                        pom = new File(dir, "pom.xml");
+                    }
+                }
+            }
+            PomFileXml pomFile = MavenHelpers.findPom(uiContext, project, pom);
             CheStack stack = CheStackDetector.detectCheStack(uiContext, project, pomFile);
             if (stack != null) {
                 cheStackId = stack.getId();

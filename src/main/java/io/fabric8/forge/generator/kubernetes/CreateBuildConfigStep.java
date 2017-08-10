@@ -286,10 +286,11 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 Object obj = attributeMap.get(AttributeMapKeys.GIT_CLONED_REPOS); // let's find the cloned repo directory
                 if ((obj != null) && (obj instanceof ArrayList)) {
                     ArrayList<GitClonedRepoDetails> list = (ArrayList<GitClonedRepoDetails>)obj;
-                    if (list.size() > 0) {
-                        GitClonedRepoDetails repoDetails = list.get(0);
-                        File dir = repoDetails.getAttributes().getDirectory();
-                        pom = new File(dir, "pom.xml");
+                    for (GitClonedRepoDetails repoDetails: list) {
+                        if (repoDetails.getGitRepoName().equals(gitRepo.getRepoName())) {
+                            File dir = repoDetails.getAttributes().getDirectory();
+                            pom = new File(dir, "pom.xml");
+                        }
                     }
                 }
             }

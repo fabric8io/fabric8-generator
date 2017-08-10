@@ -60,17 +60,15 @@ public class CheStackDetector {
      * Lets detect the default stack to use for the newly created project
      */
     public static CheStack detectCheStack(UIContext context, org.jboss.forge.addon.projects.Project project, PomFileXml pom) {
-        if (project != null) {
-            if (pom != null) {
-                Document doc = pom.getDocument();
-                if (doc != null) {
-                    return detectStackFromPomXml(doc);
-                }
-                return CheStack.JavaCentOS;
+        if (pom != null) {
+            Document doc = pom.getDocument();
+            if (doc != null) {
+                return detectStackFromPomXml(doc);
             }
-            if (hasFile(context, project, "package.json")) {
-                return CheStack.NodeJS;
-            }
+            return CheStack.JavaCentOS;
+        }
+        if (project != null && hasFile(context, project, "package.json")) {
+            return CheStack.NodeJS;
         }
         // TODO assume Java?
         return CheStack.JavaCentOS;

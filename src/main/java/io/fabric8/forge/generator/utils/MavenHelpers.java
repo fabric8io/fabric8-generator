@@ -34,18 +34,18 @@ public class MavenHelpers {
     /**
      * Loads the pom file if present
      */
-    public static PomFileXml findPom(UIContext context, org.jboss.forge.addon.projects.Project project) {
-        if (project != null) {
-            File pomFile = CommandHelpers.getProjectContextFile(context, project, "pom.xml");
-            if (Files.isFile(pomFile)) {
-                Document doc = null;
-                try {
-                    doc = CheStackDetector.parseXmlFile(pomFile);
-                } catch (Exception e) {
-                    LOG.debug("Failed to parse " + pomFile + " with: " + e, e);
-                }
-                return new PomFileXml(pomFile, doc);
+    public static PomFileXml findPom(UIContext context, org.jboss.forge.addon.projects.Project project, File pomFile) {
+        if (pomFile == null && project != null) {
+            pomFile = CommandHelpers.getProjectContextFile(context, project, "pom.xml");
+        }
+        if (Files.isFile(pomFile)) {
+            Document doc = null;
+            try {
+                doc = CheStackDetector.parseXmlFile(pomFile);
+            } catch (Exception e) {
+                LOG.debug("Failed to parse " + pomFile + " with: " + e, e);
             }
+            return new PomFileXml(pomFile, doc);
         }
         return null;
     }

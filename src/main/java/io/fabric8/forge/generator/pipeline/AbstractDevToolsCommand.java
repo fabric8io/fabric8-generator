@@ -138,6 +138,8 @@ public abstract class AbstractDevToolsCommand extends AbstractProjectCommand {
     }
 
     protected void removeTemporaryFiles(File basedir) {
+        // TODO lets replace this with a mechanism to register folders to be removed after execution
+/*
         if (basedir != null && basedir.exists()) {
             try {
                 Files.recursiveDelete(basedir);
@@ -145,5 +147,6 @@ public abstract class AbstractDevToolsCommand extends AbstractProjectCommand {
                 log.warn("Failed to delete " + basedir + " due to: " + e, e);
             }
         }
+*/
     }
 }

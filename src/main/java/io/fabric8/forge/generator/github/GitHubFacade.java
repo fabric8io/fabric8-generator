@@ -99,8 +99,9 @@ public class GitHubFacade {
                 LOG.debug("Switching the github user name from " + username + " to " + login);
                 details.setUsername(login);
             }
+            // lets always use the github email address
             String email = myself.getEmail();
-            if (Strings.isNotBlank(email) && Strings.isNullOrBlank(details.getEmail())) {
+            if (Strings.isNotBlank(email)) {
                 details.setEmail(email);
             }
         } catch (IOException e) {

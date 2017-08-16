@@ -28,6 +28,8 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.kohsuke.github.GHCreateRepositoryBuilder;
+import org.kohsuke.github.GHEvent;
+import org.kohsuke.github.GHHook;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRepository;
@@ -43,14 +45,15 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-import static io.fabric8.forge.generator.utils.StringHelpers.createdAtText;
 
 /**
  */
@@ -257,13 +260,52 @@ public class GitHubFacade {
 
     public void createWebHook(WebHookDetails webhook) throws IOException {
         String repoName = webhook.getRepositoryName();
-/*
-        String orgName = webhook.getOrganisation();
-        GHRepository repository = github.getRepository(orgName + "/" + repoName);
-        repository.createWebHook(webhook.getWebhookURL());
-*/
 
-        registerGitWebHook(details, webhook.getWebhookUrl(), webhook.getGitOwnerName(), repoName, webhook.getSecret());
+
+        String orgName = webhook.getGitOwnerName();
+        GHRepository repository = github.getRepository(orgName + "/" + repoName);
+        String webhookUrl = webhook.getWebhookUrl();
+
+        removeOldWebHooks(repository, webhookUrl);
+
+        Map<String, String> config = new HashMap<>();
+        config.put("url", webhookUrl);
+        config.put("insecure_ssl", "1");
+        config.put("content_type", "json");
+        config.put("secret", webhook.getSecret());
+        List<GHEvent> events = new ArrayList<>();
+        events.add(GHEvent.ALL);
+        GHHook hook = repository.createHook("web", config, events, true);
+        if (hook != null) {
+            LOG.info("Created WebHook " + hook.getName() + " with ID " + hook.getId() + " for " + repository.getFullName() + " on URL " + webhookUrl);
+        }
+        //registerGitWebHook(details, webhook.getWebhookUrl(), webhook.getGitOwnerName(), repoName, webhook.getSecret());
+    }
+
+    private void removeOldWebHooks(GHRepository repository, String webhookUrl) {
+        List<GHHook> hooks = null;
+        try {
+            hooks = repository.getHooks();
+        } catch (IOException e) {
+            LOG.warn("Failed to find WebHooks for repository " + repository.getFullName() + " due to : " + e, e);
+            return;
+        }
+        if (hooks != null) {
+            for (GHHook hook : hooks) {
+                Map<String, String> config = hook.getConfig();
+                if (config != null) {
+                    String url = config.get("url");
+                    if (url != null && webhookUrl.equals(url)) {
+                        LOG.info("Removing WebHook " + hook.getName() + " with ID " + hook.getId() + " for " + repository.getFullName() + " on URL " + webhookUrl);
+                        try {
+                            hook.delete();
+                        } catch (IOException e) {
+                            LOG.warn("Failed to remove WebHook " + hook.getName() + " with ID " + hook.getId() + " for " + repository.getFullName() + " on URL " + webhookUrl + " due to: " + e, e);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void registerGitWebHook(GitAccount details, String webhookUrl, String gitOwnerName, String gitRepoName, String botSecret) throws IOException {

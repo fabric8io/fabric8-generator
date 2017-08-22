@@ -54,6 +54,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.TreeMap;
+
+import static java.util.Collections.unmodifiableMap;
 
 /**
  */
@@ -175,8 +178,13 @@ public class GitHubFacade {
                 Map<String, GHRepository> repositories;
                 String username = details.getUsername();
                 if (Strings.isNullOrBlank(orgName) || orgName.equals(username)) {
-                    repositories = github.getUser(username).getRepositories();
-                } else {
+                    Map<String,GHRepository> repositoriesTree = new TreeMap<String, GHRepository>();
+                    // With OWNER, retrieve public and private repositories owned by current user (only).
+                    for (GHRepository r : github.getMyself().listRepositories(100, GHMyself.RepositoryListFilter.OWNER)) {
+                        repositoriesTree.put(r.getName(),r);
+                    }
+                    repositories = unmodifiableMap(repositoriesTree);
+                 } else {
                     repositories = github.getOrganization(orgName).getRepositories();
                 }
                 if (repositories != null) {

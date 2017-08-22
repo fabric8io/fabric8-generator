@@ -10,6 +10,12 @@ package io.fabric8.forge.generator.github;
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitRepositoryDTO;
+import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
+import io.fabric8.kubernetes.api.Controller;
+import io.fabric8.kubernetes.api.KubernetesHelper;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.BuildConfig;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
@@ -26,13 +32,12 @@ import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Iterator;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPOSITORY_PATTERN;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAMES;
 
@@ -47,10 +52,11 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
     private UISelectMany<GitRepositoryDTO> gitRepositoryPattern;
     private GitHubFacade github;
     private Collection<GitRepositoryDTO> repositoryNames;
+    private KubernetesClient kubernetesClient;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
-
+        kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
         this.repositoriesCache = cacheManager.getCache(CacheNames.GITHUB_REPOSITORIES_FOR_ORGANISATION);
 
         this.github = createGithubFacade(builder.getUIContext());
@@ -87,6 +93,21 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         Iterable<GitRepositoryDTO> value = gitRepositoryPattern.getValue();
         if (!value.iterator().hasNext()) {
             context.addValidationError(gitRepositoryPattern, "You must select a repository to import");
+        }
+        // Check for repos with already existing bc
+        Controller controller = new Controller(kubernetesClient);
+        OpenShiftClient openShiftClient = controller.getOpenShiftClientOrNull();
+        if (openShiftClient == null) {
+            context.addValidationError(gitRepositoryPattern, "Could not create OpenShiftClient. Maybe the Kubernetes server version is older than 1.7?");
+        }
+        Iterator<GitRepositoryDTO> it = value.iterator();
+        while (it.hasNext()) {
+            GitRepositoryDTO repo = it.next();
+            BuildConfig oldBC = openShiftClient.buildConfigs().withName(repo.getName()).get();
+            if (oldBC != null && Strings.isNotBlank(KubernetesHelper.getName(oldBC))) {
+               context.addValidationError(gitRepositoryPattern,"The repository " + repo.getName() + " has already a build config, please select another repo.");
+               break;
+            }
         }
 
     }

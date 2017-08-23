@@ -72,21 +72,8 @@ public class GitAccount {
             throw new KeyCloakFailureException("KeyCloak returned an invalid token. Are you sure you are logged in?", e);
         }
         String authToken = TokenHelper.getMandatoryTokenFor(KeycloakEndpoint.GET_GITHUB_TOKEN, authHeader);
-        Map<String, Claim> claims = jwt.getClaims();
-        String username = getClaim(claims, "preferred_username");
-        String email = getClaim(claims, "email");
-        LOG.debug("Loading git account from saas: username: " + username + " email: " + email);
-        return new GitAccount(username, authToken, null, email);
-    }
-
-    private static String getClaim(Map<String, Claim> claims, String key) {
-        if (claims != null) {
-            Claim claim = claims.get(key);
-            if (claim != null) {
-                return claim.asString();
-            }
-        }
-        return null;
+        // Git claims will be set at GitHubFacade / GogsFacade level, keep them null for now.
+        return new GitAccount(null, authToken, null, null);
     }
 
     /**

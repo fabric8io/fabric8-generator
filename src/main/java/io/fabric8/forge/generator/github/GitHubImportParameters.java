@@ -14,21 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator.cache;
+package io.fabric8.forge.generator.github;
 
 /**
  */
-public class CacheNames {
-    public static final String USER_NAMESPACES = "user-namespaces";
-    public static final String USER_SPACES = "user-spaces";
+public class GitHubImportParameters {
+    private final String org;
+    private final String repo;
+    private final String orgAndRepo;
+    private final GitHubFacade github;
 
-    public static final String USER_PROFILE_SETTINGS = "user-profile-settings";
+    public GitHubImportParameters(String org, String repo, String orgAndRepo, GitHubFacade github) {
+        this.org = org;
+        this.repo = repo;
+        this.orgAndRepo = orgAndRepo;
+        this.github = github;
+    }
 
-    public static final String GITHUB_ACCOUNT_FROM_SECRET = "github-account-from-secret";
-    public static final String GITHUB_ORGANISATIONS = "github-organisations";
-    public static final String GITHUB_REPOSITORIES_FOR_ORGANISATION = "github-repositories-for-organisation";
+    public String getOrg() {
+        return org;
+    }
 
-    public static final String GOGS_ACCOUNT_FROM_SECRET = "gogs-account-from-secret";
-    public static final String GOGS_ORGANISATIONS = "gogs-organisations";
-    public static final String GIT_PROVIDERS = "git-providers";
+    public String getRepo() {
+        return repo;
+    }
+
+    public String getOrgAndRepo() {
+        return orgAndRepo;
+    }
+
+    public GitHubFacade getGithub() {
+        return github;
+    }
 }

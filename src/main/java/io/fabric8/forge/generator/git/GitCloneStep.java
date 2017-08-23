@@ -20,7 +20,6 @@ import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.utils.Strings;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.result.Result;
@@ -28,7 +27,6 @@ import org.jboss.forge.addon.ui.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;

@@ -43,6 +43,7 @@ public class CacheFacade {
     public CacheFacade() {
         manager.defineConfiguration(CacheNames.USER_NAMESPACES, createCacheConfiguration(1000, 2 * 60));
         manager.defineConfiguration(CacheNames.USER_SPACES, createCacheConfiguration(1000, 2 * 60));
+        manager.defineConfiguration(CacheNames.USER_PROFILE_SETTINGS, createCacheConfiguration(1000, 60 * 5));
 
         manager.defineConfiguration(CacheNames.GIT_PROVIDERS, createCacheConfiguration(1000, 2 * 60));
 

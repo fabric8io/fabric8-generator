@@ -17,19 +17,12 @@
 package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.Configuration;
-import io.fabric8.forge.generator.git.CloneRepoAttributes;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.GitSecretNames;
 import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.project.support.GitUtils;
-import io.fabric8.project.support.UserDetails;
-import org.eclipse.jgit.api.CloneCommand;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.transport.CredentialsProvider;
 import org.jboss.forge.addon.ui.result.navigation.NavigationResultBuilder;
 
 import java.io.IOException;

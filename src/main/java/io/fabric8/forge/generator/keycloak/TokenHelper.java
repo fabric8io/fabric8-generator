@@ -29,12 +29,17 @@ import java.util.List;
 public class TokenHelper {
 
     public static String getMandatoryAuthHeader(UIContext context) {
+        String authToken = getAuthHeader(context);
+        if (Strings.isNullOrBlank(authToken)) {
+            throw new WebApplicationException("No authorization header available", Response.Status.UNAUTHORIZED);
+        }
+        return authToken;
+    }
+
+    public static String getAuthHeader(UIContext context) {
         String authToken = headerToString(context.getAttributeMap().get("Authorization"));
         if (Strings.isNullOrBlank(authToken)) {
             authToken = System.getenv(EnvironmentVariables.TESTING_OAUTH_HEADER);
-        }
-        if (Strings.isNullOrBlank(authToken)) {
-            throw new WebApplicationException("No authorization header available", Response.Status.UNAUTHORIZED);
         }
         return authToken;
     }

@@ -16,7 +16,7 @@
  */
 package io.fabric8.forge.generator.quickstart;
 
-import io.openshift.launchpad.catalog.Booster;
+import io.openshift.booster.catalog.Booster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

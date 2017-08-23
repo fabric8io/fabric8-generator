@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 
 import static io.fabric8.forge.generator.AttributeMapKeys.PROJECT_DIRECTORY_FILE;
@@ -105,7 +104,7 @@ public abstract class AbstractDevToolsCommand extends AbstractProjectCommand {
         }
     }
 
-    protected File getSelectionFolder(UIContext context) {
+    public static File getSelectionFolder(UIContext context) {
         Map<Object, Object> attributeMap = context.getAttributeMap();
         File file = (File) attributeMap.get(PROJECT_DIRECTORY_FILE);
         if (file != null) {

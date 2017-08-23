@@ -19,7 +19,6 @@ package io.fabric8.forge.generator.git;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.devops.ProjectConfigs;
 import io.fabric8.forge.generator.cache.CacheFacade;
-import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
 import io.fabric8.project.support.GitUtils;
 import io.fabric8.project.support.UserDetails;
@@ -36,7 +35,6 @@ import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.CacheManager;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -78,7 +76,7 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
 
 
 
-    protected static String getOrganisationName(GitOrganisationDTO org) {
+    public static String getOrganisationName(GitOrganisationDTO org) {
         String orgName = null;
         if (org != null) {
             orgName = org.getId();
@@ -97,20 +95,28 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
 
     public void importNewGitProject(UserDetails userDetails, File basedir, String message, String gitUrl)
             throws GitAPIException, JsonProcessingException {
+        importNewGitProject(userDetails, basedir, message, gitUrl, this.branch, this.origin, LOG);
+    }
+
+    public static void importNewGitProject(UserDetails userDetails, File basedir, String message, String gitUrl, String branch, String origin, Logger logger) throws GitAPIException {
         GitUtils.disableSslCertificateChecks();
         InitCommand initCommand = Git.init();
         initCommand.setDirectory(basedir);
         Git git = initCommand.call();
-        LOG.info("Initialised an empty git configuration repo at {}", basedir.getAbsolutePath());
-        gitAddCommitAndPush(git, gitUrl, userDetails, basedir, message);
+        logger.info("Initialised an empty git configuration repo at {}", basedir.getAbsolutePath());
+        gitAddCommitAndPush(git, gitUrl, userDetails, basedir, message, branch, origin, logger);
     }
 
     protected void gitAddCommitAndPush(Git git, String gitUrl, UserDetails userDetails, File basedir, String message) throws GitAPIException {
+        gitAddCommitAndPush(git, gitUrl, userDetails, basedir, message, this.branch, this.origin, LOG);
+    }
+
+    private static void gitAddCommitAndPush(Git git, String gitUrl, UserDetails userDetails, File basedir, String message, String branch, String origin, Logger logger) throws GitAPIException {
         PersonIdent personIdent = userDetails.createPersonIdent();
 
         GitUtils.configureBranch(git, branch, origin, gitUrl);
         GitUtils.addDummyFileToEmptyFolders(basedir);
-        LOG.info("About to git commit and push to: " + gitUrl + " and remote name " + origin);
+        logger.info("About to git commit and push to: " + gitUrl + " and remote name " + origin);
         int retryCount = 5;
         for (int i = retryCount; i > 0; i--) {
             if (i < retryCount) {
@@ -127,13 +133,17 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
                 if (i <= 1) {
                     throw e;
                 } else {
-                    LOG.info("Caught a transport exception: " + e + " so retrying");
+                    logger.info("Caught a transport exception: " + e + " so retrying");
                 }
             }
         }
     }
 
     protected Result updateGitURLInJenkinsfile(File basedir, String gitUrl) {
+        return updateGitURLInJenkinsfile(basedir, gitUrl, LOG);
+    }
+
+    public static Result updateGitURLInJenkinsfile(File basedir, String gitUrl, Logger logger) {
         File jenkinsFile = new File(basedir, ProjectConfigs.LOCAL_FLOW_FILE_NAME);
         if (jenkinsFile.isFile() && jenkinsFile.exists()) {
             String pipelineText;
@@ -146,7 +156,7 @@ public abstract class AbstractGitRepoStep extends AbstractDevToolsCommand {
             try {
                 IOHelpers.writeFully(jenkinsFile, pipelineText);
             } catch (IOException e) {
-                LOG.error("Failed to write file " + jenkinsFile + ". " + e, e);
+                logger.error("Failed to write file " + jenkinsFile + ". " + e, e);
                 return Results.fail("Failed to write file " + jenkinsFile + ". " + e, e);
             }
         }

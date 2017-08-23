@@ -59,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import static io.openshift.launchpad.Files.deleteRecursively;
+import static io.openshift.booster.Files.deleteRecursively;
 
 
 /**

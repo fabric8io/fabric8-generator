@@ -14,21 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator.cache;
+package io.fabric8.forge.generator.utils;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  */
-public class CacheNames {
-    public static final String USER_NAMESPACES = "user-namespaces";
-    public static final String USER_SPACES = "user-spaces";
+public class JsonHelper {
+    /**
+     * Navigates the given tree with the given sequence of paths
+     */
+    public static JsonNode navigate(JsonNode tree, String... paths) {
+        JsonNode node = tree;
+        for (String path : paths) {
+            if (node == null) {
+                return null;
+            }
+            node = node.get(path);
+        }
+        return node;
+    }
 
-    public static final String USER_PROFILE_SETTINGS = "user-profile-settings";
-
-    public static final String GITHUB_ACCOUNT_FROM_SECRET = "github-account-from-secret";
-    public static final String GITHUB_ORGANISATIONS = "github-organisations";
-    public static final String GITHUB_REPOSITORIES_FOR_ORGANISATION = "github-repositories-for-organisation";
-
-    public static final String GOGS_ACCOUNT_FROM_SECRET = "gogs-account-from-secret";
-    public static final String GOGS_ORGANISATIONS = "gogs-organisations";
-    public static final String GIT_PROVIDERS = "git-providers";
+    public static String textValue(JsonNode node, String name) {
+        if (node != null) {
+            JsonNode value = node.get(name);
+            if (value != null) {
+                return value.textValue();
+            }
+        }
+        return null;
+    }
 }

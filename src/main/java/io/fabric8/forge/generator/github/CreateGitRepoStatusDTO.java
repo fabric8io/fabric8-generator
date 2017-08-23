@@ -18,8 +18,6 @@ package io.fabric8.forge.generator.github;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import java.util.List;
-
 /**
  * Results from creating a git repo
  */

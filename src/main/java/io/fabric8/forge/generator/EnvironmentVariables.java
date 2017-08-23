@@ -20,6 +20,7 @@ package io.fabric8.forge.generator;
  */
 public class EnvironmentVariables {
     public static final String KEYCLOAK_SAAS = "KEYCLOAK_SAAS_URL";
+    public static final String WIT_URL = "WIT_URL";
     public static final String GOGS_URL = "GOGS_URL";
     public static final String NAMESPACE = "KUBERNETES_NAMESPACE";
 

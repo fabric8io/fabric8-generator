@@ -40,6 +40,7 @@ public class Configuration {
      * other kinds of on premise git repositories.
      */
     public static boolean isOnPremise() {
+        // TODO we may want to also check for a GOGS / GITLAB env var?
         return Strings.isNullOrBlank(keycloakSaaSURL());
     }
 }

@@ -20,15 +20,11 @@ import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitAccount;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
-import io.fabric8.forge.generator.github.CreateGitRepoStatusDTO;
 import io.fabric8.forge.generator.github.GitHubFacade;
 import io.fabric8.forge.generator.github.GitHubImportParameters;
-import io.fabric8.forge.generator.github.GitHubProvider;
-import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
 import io.openshift.launchpad.ui.booster.DeploymentType;
 import io.openshift.launchpad.ui.booster.ProjectInfoStep;
-import io.openshift.launchpad.ui.input.ProjectName;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
@@ -36,7 +32,6 @@ import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
 import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
-import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
 import org.jboss.forge.addon.ui.metadata.WithAttributes;
@@ -45,31 +40,22 @@ import org.jboss.forge.addon.ui.result.Result;
 import org.jboss.forge.addon.ui.result.Results;
 import org.jboss.forge.addon.ui.util.Categories;
 import org.jboss.forge.addon.ui.util.Metadata;
-import org.kohsuke.github.GHRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.enterprise.inject.Typed;
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ACCOUNT;
-import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ORGANISATION;
-import static io.fabric8.forge.generator.AttributeMapKeys.GIT_OWNER_NAME;
-import static io.fabric8.forge.generator.AttributeMapKeys.GIT_PROVIDER;
-import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAME;
-import static io.fabric8.forge.generator.AttributeMapKeys.GIT_URL;
 import static io.fabric8.forge.generator.git.AbstractGitRepoStep.getOrganisationName;
-import static io.fabric8.forge.generator.git.AbstractGitRepoStep.importNewGitProject;
-import static io.fabric8.forge.generator.git.AbstractGitRepoStep.updateGitURLInJenkinsfile;
 import static io.fabric8.forge.generator.github.AbstractGithubStep.createGitHubFacade;
 import static io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand.getSelectionFolder;
 
 /**
  */
+@Typed(Fabric8ProjectInfoStep.class)
 public class Fabric8ProjectInfoStep extends ProjectInfoStep {
     private static final transient Logger LOG = LoggerFactory.getLogger(NewProjectWizard.class);
 
@@ -153,6 +139,10 @@ public class Fabric8ProjectInfoStep extends ProjectInfoStep {
         }
         String orgName = getOrganisationName(gitOrganisation.getValue());
         String repoName = getGithubRepositoryNameValue();
+        if (Strings.isNotBlank(repoName)) {
+            
+        }
+
         if (Strings.isNotBlank(orgName)) {
             if (Strings.isNotBlank(repoName)) {
                 github.validateRepositoryName(getNamed(), context, orgName, repoName);

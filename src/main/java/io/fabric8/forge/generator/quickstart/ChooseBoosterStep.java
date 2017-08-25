@@ -72,9 +72,23 @@ public class ChooseBoosterStep implements UIWizardStep {
         quickstart.setValueChoices(boosterList);
 
         if (!boosterList.isEmpty()) {
-            quickstart.setDefaultValue(boosterList.get(0));
+            quickstart.setDefaultValue(pickDefaultBooster(boosterList));
         }
         builder.add(quickstart);
+    }
+
+    protected BoosterDTO pickDefaultBooster(List<BoosterDTO> boosterList) {
+        for (BoosterDTO boosterDTO : boosterList) {
+            if ("vertx-http-booster".equals(boosterDTO.getId())) {
+                return boosterDTO;
+            }
+        }
+        for (BoosterDTO boosterDTO : boosterList) {
+            if (boosterDTO.getName().startsWith("Vert.x")) {
+                return boosterDTO;
+            }
+        }
+        return boosterList.get(0);
     }
 
     @Override

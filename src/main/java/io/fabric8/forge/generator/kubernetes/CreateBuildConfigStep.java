@@ -273,7 +273,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 BuildConfig oldBC = openShiftClient.buildConfigs().inNamespace(namespace).withName(projectName).get();
                 if (oldBC != null && Strings.isNotBlank(KubernetesHelper.getName(oldBC))) {
                     LOG.warn("Already created build " + namespace + "/" + projectName + " so returning");
-                    return Results.success("Already created BuildConfig " + namespace + "/" + projectName);
+                    return Results.fail("Already created BuildConfig " + namespace + "/" + projectName);
                 }
             } catch (Exception e) {
                 LOG.warn("Ignoring exception looking up BuildConfig " + namespace + "/" + projectName + ": " + e, e);

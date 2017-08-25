@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Provide a single list of boosters to pick from
@@ -100,9 +99,9 @@ public class ChooseBoosterStep implements UIWizardStep {
         BoosterDTO boosterDTO = quickstart.getValue();
         Map<Object, Object> attributeMap = uiContext.getAttributeMap();
         if (boosterDTO != null) {
-            Mission mission = boosterDTO.getMission();
-            Booster booster = boosterDTO.getBooster();
-            Runtime runtime = boosterDTO.getRuntime();
+            Mission mission = boosterDTO.mission();
+            Booster booster = boosterDTO.booster();
+            Runtime runtime = boosterDTO.runtime();
 
             attributeMap.put(BoosterDTO.class, boosterDTO);
             attributeMap.put(Mission.class, mission);

@@ -29,12 +29,9 @@ import io.openshift.booster.catalog.Runtime;
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class BoosterDTO implements Comparable<BoosterDTO> {
-    @JsonIgnore
-    private  Booster booster;
-    @JsonIgnore
-    private Mission mission;
-    @JsonIgnore
-    private Runtime runtime;
+    private transient Booster booster;
+    private transient Mission mission;
+    private transient Runtime runtime;
     private String id;
     private String name;
     private String description;
@@ -159,27 +156,15 @@ public class BoosterDTO implements Comparable<BoosterDTO> {
         this.runtimeName = runtimeName;
     }
 
-    public Mission getMission() {
+    public Mission mission() {
         return mission;
     }
 
-    public void setMission(Mission mission) {
-        this.mission = mission;
-    }
-
-    public Runtime getRuntime() {
+    public Runtime runtime() {
         return runtime;
     }
 
-    public void setRuntime(Runtime runtime) {
-        this.runtime = runtime;
-    }
-
-    public Booster getBooster() {
+    public Booster booster() {
         return booster;
-    }
-
-    public void setBooster(Booster booster) {
-        this.booster = booster;
     }
 }

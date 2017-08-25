@@ -73,8 +73,11 @@ public class NewProjectWizard implements UIWizard {
         }
 
         NavigationResultBuilder builder = NavigationResultBuilder.create();
+        builder.add(ChooseBoosterStep.class);
+/*
         builder.add(ChooseMissionStep.class);
         builder.add(ChooseRuntimeStep.class);
+*/
 
         if (Configuration.isOnPremise()) {
             // lets check if we have gogs / gitlab installed locally and if so let the user pick between those and github

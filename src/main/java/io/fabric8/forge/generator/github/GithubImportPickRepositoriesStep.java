@@ -104,6 +104,10 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         }
         Iterator<GitRepositoryDTO> it = value.iterator();
         String userNameSpace = KubernetesClientHelper.findDefaultNamespace(namespaces);
+        if (userNameSpace == null ) {
+            // Tenant not yet initialised properly!
+            return;
+        }
         while (it.hasNext()) {
             GitRepositoryDTO repo = it.next();
             if (repo != null && repo.getName() != null) {
@@ -114,6 +118,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
                 }
             }
         }
+
 
     }
 

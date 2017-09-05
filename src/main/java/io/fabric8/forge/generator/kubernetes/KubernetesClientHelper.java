@@ -260,6 +260,9 @@ public class KubernetesClientHelper {
                 return namespace;
             }
         }
+        if (namespaces.isEmpty()) {
+            return null;
+        }
         return namespaces.get(0);
     }
 

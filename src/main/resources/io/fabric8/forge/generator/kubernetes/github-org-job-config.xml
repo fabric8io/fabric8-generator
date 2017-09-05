@@ -34,7 +34,7 @@
       <scanCredentialsId>cd-github</scanCredentialsId>
       <checkoutCredentialsId>SAME</checkoutCredentialsId>
       <pattern></pattern>
-      <includes>master</includes>
+      <includes>master | PR-*</includes>
       <buildOriginBranch>true</buildOriginBranch>
       <buildOriginBranchWithPR>true</buildOriginBranchWithPR>
       <buildOriginPRMerge>true</buildOriginPRMerge>

@@ -7,6 +7,7 @@
 
 package io.fabric8.forge.generator.quickstart;
 
+import io.fabric8.forge.generator.AttributeMapKeys;
 import io.openshift.booster.catalog.Booster;
 import io.openshift.booster.catalog.BoosterCatalogService;
 import io.openshift.booster.catalog.Mission;
@@ -57,9 +58,12 @@ public class ChooseBoosterStep implements UIWizardStep {
         this.catalogService = catalogServiceFactory.getCatalogService(context);
         this.boosters = catalogService.getBoosters();
 
+        boolean customBoosterCatalog = hasCustomBoosterCatalog(context);
         List<BoosterDTO> boosterList = new ArrayList<>();
         for (Booster booster : boosters) {
-            boosterList.add(new BoosterDTO(booster));
+            if (customBoosterCatalog || ValidBoosters.validRhoarBooster(booster)) {
+                boosterList.add(new BoosterDTO(booster));
+            }
         }
         Collections.sort(boosterList);
 
@@ -75,6 +79,15 @@ public class ChooseBoosterStep implements UIWizardStep {
             quickstart.setDefaultValue(pickDefaultBooster(boosterList));
         }
         builder.add(quickstart);
+    }
+
+    /**
+     * Returns true if there is a custom user speific booster catalog
+     */
+    private boolean hasCustomBoosterCatalog(UIContext context) {
+        Map<Object, Object> attributeMap = context.getAttributeMap();
+        return attributeMap.containsKey(AttributeMapKeys.CATALOG_GIT_REF) ||
+                attributeMap.containsKey(AttributeMapKeys.CATALOG_GIT_REPOSITORY);
     }
 
     protected BoosterDTO pickDefaultBooster(List<BoosterDTO> boosterList) {

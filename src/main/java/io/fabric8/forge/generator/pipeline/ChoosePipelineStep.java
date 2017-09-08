@@ -23,9 +23,12 @@ import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitClonedRepoDetails;
+import io.fabric8.forge.generator.github.AbstractGithubStep;
+import io.fabric8.forge.generator.github.GitHubFacade;
 import io.fabric8.forge.generator.kubernetes.CachedSpaces;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.forge.generator.kubernetes.SpaceDTO;
+import io.fabric8.forge.generator.quickstart.BoosterDTO;
 import io.fabric8.forge.generator.versions.VersionHelper;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -38,10 +41,7 @@ import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
 import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.projects.Project;
-import org.jboss.forge.addon.ui.context.UIBuilder;
-import org.jboss.forge.addon.ui.context.UIContext;
-import org.jboss.forge.addon.ui.context.UIExecutionContext;
-import org.jboss.forge.addon.ui.context.UINavigationContext;
+import org.jboss.forge.addon.ui.context.*;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
@@ -63,13 +63,7 @@ import org.w3c.dom.Text;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static io.fabric8.forge.generator.che.CheStackDetector.parseXmlFile;
 import static io.fabric8.forge.generator.kubernetes.KubernetesClientHelper.findDefaultNamespace;
@@ -94,6 +88,9 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     @WithAttributes(label = "Space", description = "The space for the new app")
     private UIInput<String> labelSpace;
     @Inject
+    @WithAttributes(label = "Override Jenkins and POM files", description = "Should we override Jenkins and POM files in all repositories?")
+    private UIInput<Boolean> overrideJenkinsFile;
+    @Inject
     private JenkinsPipelineLibrary jenkinsPipelineLibrary;
     @Inject
     private CacheFacade cacheManager;
@@ -101,6 +98,9 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     private String namespace = KubernetesHelper.defaultNamespace();
 
     private boolean hasJenkinsFile;
+    private ArrayList<String> repositoryNames;
+    private String organisation;
+    private GitHubFacade github;
 
     private static Element getGrandParentElement(Element node) {
         Node parentNode = node.getParentNode();
@@ -132,6 +132,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
+        this.github = AbstractGithubStep.createGitHubFacade(builder.getUIContext(), null);
         this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);
@@ -156,9 +157,6 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             }
         });
 
-        /*
-        pipeline.setCompleter((context1, input, value) -> getPipelines(context1, true));
-        */
         pipeline.setValueConverter(text -> getPipelineForValue(context, text));
         if (getCurrentSelectedProject(context) != null) {
             PipelineDTO defaultValue = getPipelineForValue(context, DEFAULT_MAVEN_FLOW);
@@ -170,19 +168,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         // lets initialise the data from the current config if it exists
         ProjectConfig config = null;
         Project project = getCurrentSelectedProject(context);
-/*
-        File configFile = getProjectConfigFile(context, getSelectedProject(context));
-        if (configFile != null && configFile.exists()) {
-            config = ProjectConfigs.parseProjectConfig(configFile);
-        }
-        if (config != null) {
-            PipelineDTO flow = getPipelineForValue(context, config.getPipeline());
-            if (flow != null) {
-                CommandHelpers.setInitialComponentValue(this.pipeline, flow);
-            }
-            context.getAttributeMap().put("projectConfig", config);
-        }
-*/
+
 
         hasJenkinsFile = hasLocalJenkinsFile(context, project);
         if (!hasJenkinsFile) {
@@ -197,12 +183,36 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             builder.add(kubernetesSpace);
         }
 
-/*
-        labelSpace.setValueChoices(() -> loadCachedSpaces(key));
-        labelSpace.setItemLabelConverter(value -> value.getLabel());
-*/
         builder.add(labelSpace);
 
+        // set the list of repositories
+        Map<Object, Object> attributeMap = context.getAttributeMap();
+        Object obj = attributeMap.get(AttributeMapKeys.GIT_REPO_NAMES);
+        if ((obj != null) && (obj instanceof ArrayList)) {
+            repositoryNames = (ArrayList<String>)obj;
+        }
+        organisation = (String)attributeMap.get(AttributeMapKeys.GIT_ORGANISATION);
+        Object object = attributeMap.get(BoosterDTO.class); // Booster is a step for Quickstart flow only
+        if (object == null) { // we want to target import repo flow only
+            // search if any jenkins files
+            ArrayList<String> reposNameWithJenkinsFile = new ArrayList<>();
+            String warning = null;
+            if (repositoryNames != null) {
+                for (String repoName : repositoryNames) {
+                    if (github.hasFile(organisation, repoName, "Jenkinsfile")) {
+                        reposNameWithJenkinsFile.add(repoName);
+                    }
+                }
+                if (reposNameWithJenkinsFile.size() > 0) {
+                    warning = formatRepoName(reposNameWithJenkinsFile);
+                }
+            }
+            overrideJenkinsFile.setDefaultValue(true);
+            if (warning != null) {
+                overrideJenkinsFile.setDescription(warning);
+            }
+            builder.add(overrideJenkinsFile);
+        }
 
         LOG.debug("initializeUI took " + watch.taken());
     }
@@ -224,10 +234,29 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         return hasJenkinsFile;
     }
 
+    private String formatRepoName(ArrayList<String> reposNameWithJenkinsFile) {
+        StringBuffer formattedRepos= new StringBuffer();
+        formattedRepos.append("(");
+        for (String repoName : reposNameWithJenkinsFile) {
+            formattedRepos.append(repoName);
+            String lastRepoName = reposNameWithJenkinsFile.get(reposNameWithJenkinsFile.size() - 1);
+            if (!repoName.equals(lastRepoName)) {
+                formattedRepos.append(", ");
+            }
+        }
+        formattedRepos.append(")");
+        if (reposNameWithJenkinsFile.size() <= 1) {
+            return "The repository " + formattedRepos + " has already a Jenkins file.";
+        } else {
+            return "The repositories " + formattedRepos + " have already a Jenkins file.";
+        }
+    }
+
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
         UIContext uiContext = context.getUIContext();
         storeAttributes(uiContext);
+
         return null;
     }
 
@@ -269,13 +298,17 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                         if (Strings.isNullOrBlank(pipelineText)) {
                             status.warning(LOG, "Cannot copy the pipeline to the project as no pipeline text could be loaded!");
                         } else {
-                            File newFile = new File(basedir, ProjectConfigs.LOCAL_FLOW_FILE_NAME);
-                            Files.writeToFile(newFile, pipelineText.getBytes());
-                            LOG.debug("Written Jenkinsfile to " + newFile);
+                            if(overrideJenkinsFile.getValue() == true) {
+                                File newFile = new File(basedir, ProjectConfigs.LOCAL_FLOW_FILE_NAME);
+                                Files.writeToFile(newFile, pipelineText.getBytes());
+                                LOG.debug("Written Jenkinsfile to " + newFile);
+                            }
                         }
                     }
                 }
-                updatePomVersions(uiContext, status, basedir);
+                if(overrideJenkinsFile.getValue() == true) {
+                    updatePomVersions(uiContext, status, basedir);
+                }
             }
         }
         return Results.success("Added Jenkinsfile to project", status);

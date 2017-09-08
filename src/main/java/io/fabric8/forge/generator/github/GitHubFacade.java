@@ -27,15 +27,7 @@ import io.fabric8.utils.URLUtils;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIValidationContext;
 import org.jboss.forge.addon.ui.input.UIInput;
-import org.kohsuke.github.GHCreateRepositoryBuilder;
-import org.kohsuke.github.GHEvent;
-import org.kohsuke.github.GHHook;
-import org.kohsuke.github.GHMyself;
-import org.kohsuke.github.GHOrganization;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.HttpException;
+import org.kohsuke.github.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,6 +195,21 @@ public class GitHubFacade {
 
     public UserDetails createUserDetails(String gitUrl) {
         return new UserDetails(gitUrl, gitUrl, details.getUsername(), details.tokenOrPassword(), getEmail());
+    }
+
+    public boolean hasFile(String org, String repoName, String fileName) {
+        boolean hasFile = false;
+        GHContent content = null;
+        try {
+            content = github.getRepository(org + "/" + repoName).getFileContent(fileName);
+            if (content != null) {
+                hasFile = true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return hasFile;
+        }
+        return hasFile;
     }
 
     public GHMyself getMyself() {

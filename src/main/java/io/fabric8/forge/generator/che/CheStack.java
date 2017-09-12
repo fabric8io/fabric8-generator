@@ -22,7 +22,7 @@ public enum CheStack {
     Vertx("vert.x", "Vert.x"),
     SpringBoot("spring-boot", "Spring Boot"),
     WildFlySwarm("WildFly Swarm", "WildFly Swarm"),
-    JavaCentOS("java-centos", "Kava"),
+    JavaCentOS("java-centos", "Java"),
     NodeJS("CentOS nodejs", "NodeJS");
 
     private final String id;

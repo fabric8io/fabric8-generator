@@ -192,8 +192,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             repositoryNames = (ArrayList<String>)obj;
         }
         organisation = (String)attributeMap.get(AttributeMapKeys.GIT_ORGANISATION);
-        Object object = attributeMap.get(BoosterDTO.class); // Booster is a step for Quickstart flow only
-        if (object == null) { // we want to target import repo flow only
+        if (isImportRepositoryFlow(attributeMap)) { // we want to target import repo flow only
             // search if any jenkins files
             ArrayList<String> reposNameWithJenkinsFile = new ArrayList<>();
             String warning = null;
@@ -215,6 +214,18 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         }
 
         LOG.debug("initializeUI took " + watch.taken());
+    }
+
+    private boolean isImportRepositoryFlow(Map<Object, Object> attributeMap) {
+        Object object = attributeMap.get(BoosterDTO.class); // Booster is a step for Quickstart flow only
+        if (object == null) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isQuickstartFlow(Map<Object, Object> attributeMap) {
+        return !isImportRepositoryFlow(attributeMap);
     }
 
     private List<SpaceDTO> loadCachedSpaces(String key) {
@@ -298,7 +309,10 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                         if (Strings.isNullOrBlank(pipelineText)) {
                             status.warning(LOG, "Cannot copy the pipeline to the project as no pipeline text could be loaded!");
                         } else {
-                            if(overrideJenkinsFile.getValue() == true) {
+                            if((isImportRepositoryFlow(attributeMap) && overrideJenkinsFile.getValue() == true)
+                                    || isQuickstartFlow(attributeMap)) {
+                                // overrrideJenkinsFile is null for quickstart wizard flow
+                                // the user in import wizard flow has not opt out for the override
                                 File newFile = new File(basedir, ProjectConfigs.LOCAL_FLOW_FILE_NAME);
                                 Files.writeToFile(newFile, pipelineText.getBytes());
                                 LOG.debug("Written Jenkinsfile to " + newFile);
@@ -306,7 +320,8 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
                         }
                     }
                 }
-                if(overrideJenkinsFile.getValue() == true) {
+                if((isImportRepositoryFlow(attributeMap) && overrideJenkinsFile.getValue() == true)
+                        || isQuickstartFlow(attributeMap)) {
                     updatePomVersions(uiContext, status, basedir);
                 }
             }

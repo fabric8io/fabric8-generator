@@ -217,15 +217,11 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     }
 
     private boolean isImportRepositoryFlow(Map<Object, Object> attributeMap) {
-        Object object = attributeMap.get(BoosterDTO.class); // Booster is a step for Quickstart flow only
-        if (object == null) {
-            return true;
-        }
-        return false;
+        return !isQuickstartFlow(attributeMap);
     }
 
     private boolean isQuickstartFlow(Map<Object, Object> attributeMap) {
-        return !isImportRepositoryFlow(attributeMap);
+        return attributeMap.containsKey(BoosterDTO.class);
     }
 
     private List<SpaceDTO> loadCachedSpaces(String key) {

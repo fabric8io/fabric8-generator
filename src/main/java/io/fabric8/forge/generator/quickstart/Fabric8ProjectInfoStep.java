@@ -153,11 +153,22 @@ public class Fabric8ProjectInfoStep extends ProjectInfoStep {
 
     @Override
     public NavigationResult next(UINavigationContext context) throws Exception {
+        UIContext uiContext = context.getUIContext();
+        storeAttributes(uiContext);
         return null;
+    }
+
+    protected void storeAttributes(UIContext uiContext) {
+        // lets default the artifactId to the project name to ensure that
+        // each project generates a different docker image name
+        String projectName = getNamed().getValue();
+        getArtifactId().setValue(projectName);
     }
 
     @Override
     public Result execute(UIExecutionContext context) throws Exception {
+        UIContext uiContext = context.getUIContext();
+        storeAttributes(uiContext);
         if (github == null) {
             return Results.fail("No github account setup");
         }
@@ -175,13 +186,10 @@ public class Fabric8ProjectInfoStep extends ProjectInfoStep {
         String orgAndRepo = orgOrNoUser + "/" + repo;
         LOG.info("Creating github repository " + orgAndRepo);
 
-        UIContext uiContext = context.getUIContext();
         File basedir = getSelectionFolder(uiContext);
         if (basedir == null || !basedir.exists() || !basedir.isDirectory()) {
             return Results.fail("No project directory exists! " + basedir);
         }
-
-        String gitOwnerName = org;
 
         GitHubImportParameters importParameters = new GitHubImportParameters(org, repo, orgAndRepo, github);
         uiContext.getAttributeMap().put(GitHubImportParameters.class, importParameters);

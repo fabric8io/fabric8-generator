@@ -22,7 +22,7 @@
     <version.vertx>1.2.1</version.vertx>
     <kohsuke.github-api.version>1.84</kohsuke.github-api.version>
     <infinispan-embedded.version>9.0.0.CR2</infinispan-embedded.version>
-    <launchpad-addon.version>12</launchpad-addon.version>
+    <launchpad-addon.version>16</launchpad-addon.version>
 
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>

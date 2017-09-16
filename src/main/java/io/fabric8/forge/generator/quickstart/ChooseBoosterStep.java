@@ -9,10 +9,10 @@ package io.fabric8.forge.generator.quickstart;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
 import io.openshift.booster.catalog.Booster;
-import io.openshift.booster.catalog.BoosterCatalogService;
+import io.openshift.booster.catalog.BoosterCatalog;
 import io.openshift.booster.catalog.Mission;
 import io.openshift.booster.catalog.Runtime;
-import io.openshift.launchpad.BoosterCatalogServiceFactory;
+import io.openshift.launchpad.BoosterCatalogFactory;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,20 +44,20 @@ public class ChooseBoosterStep implements UIWizardStep {
     private static final transient Logger LOG = LoggerFactory.getLogger(ChooseBoosterStep.class);
 
     @Inject
-    private BoosterCatalogServiceFactory catalogServiceFactory;
+    private BoosterCatalogFactory catalogFactory;
 
     @Inject
     @WithAttributes(label = "Quickstart", required = true)
     private UISelectOne<BoosterDTO> quickstart;
 
-    private BoosterCatalogService catalogService;
-    private List<Booster> boosters;
+    private BoosterCatalog catalog;
+    private Collection<Booster> boosters;
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
         UIContext context = builder.getUIContext();
-        this.catalogService = catalogServiceFactory.getCatalogService(context);
-        this.boosters = catalogService.getBoosters();
+        this.catalog = catalogFactory.getCatalog(context);
+        this.boosters = catalog.getBoosters();
 
         boolean customBoosterCatalog = hasCustomBoosterCatalog(context);
         List<BoosterDTO> boosterList = new ArrayList<>();

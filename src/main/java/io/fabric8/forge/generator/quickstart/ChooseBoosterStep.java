@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,13 +60,17 @@ public class ChooseBoosterStep implements UIWizardStep {
         this.catalog = catalogFactory.getCatalog(context);
         this.boosters = catalog.getBoosters();
 
+        Map<String,BoosterDTO> map = new HashMap<>();
         boolean customBoosterCatalog = hasCustomBoosterCatalog(context);
-        List<BoosterDTO> boosterList = new ArrayList<>();
         for (Booster booster : boosters) {
             if (customBoosterCatalog || ValidBoosters.validRhoarBooster(booster)) {
-                boosterList.add(new BoosterDTO(booster));
+                String id = booster.getId();
+                if (!map.containsKey(id)) {
+                    map.put(id, new BoosterDTO(booster));
+                }
             }
         }
+        List<BoosterDTO> boosterList = new ArrayList<>(map.values());
         Collections.sort(boosterList);
 
         if (context.getProvider().isGUI()) {

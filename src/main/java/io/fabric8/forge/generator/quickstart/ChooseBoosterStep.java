@@ -64,9 +64,13 @@ public class ChooseBoosterStep implements UIWizardStep {
         boolean customBoosterCatalog = hasCustomBoosterCatalog(context);
         for (Booster booster : boosters) {
             if (customBoosterCatalog || ValidBoosters.validRhoarBooster(booster)) {
-                String id = booster.getId();
-                if (!map.containsKey(id)) {
-                    map.put(id, new BoosterDTO(booster));
+                // TODO lets filter out duplicate named boosters for now
+                // as they break the combo box UX
+                // once we move away from combo box we can return all versions of all boosters
+                // with the same name though!
+                String key = booster.getName();
+                if (!map.containsKey(key)) {
+                    map.put(key, new BoosterDTO(booster));
                 }
             }
         }

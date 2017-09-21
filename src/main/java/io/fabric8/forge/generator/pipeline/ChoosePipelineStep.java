@@ -29,6 +29,8 @@ import io.fabric8.forge.generator.kubernetes.CachedSpaces;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
 import io.fabric8.forge.generator.kubernetes.SpaceDTO;
 import io.fabric8.forge.generator.quickstart.BoosterDTO;
+import io.fabric8.forge.generator.tenant.NamespaceDTO;
+import io.fabric8.forge.generator.tenant.Tenants;
 import io.fabric8.forge.generator.versions.VersionHelper;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -66,7 +68,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static io.fabric8.forge.generator.che.CheStackDetector.parseXmlFile;
-import static io.fabric8.forge.generator.kubernetes.KubernetesClientHelper.findDefaultNamespace;
+import static io.fabric8.forge.generator.keycloak.TokenHelper.getMandatoryAuthHeader;
 import static io.fabric8.forge.generator.utils.DomUtils.addText;
 import static io.fabric8.forge.generator.utils.DomUtils.createChild;
 import static io.fabric8.forge.generator.utils.DomUtils.getOrCreateChild;
@@ -76,7 +78,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     public static final String JENKINSFILE = "Jenkinsfile";
     private static final transient Logger LOG = LoggerFactory.getLogger(ChoosePipelineStep.class);
     private static final String DEFAULT_MAVEN_FLOW = "workflows/maven/CanaryReleaseStageAndApprovePromote.groovy";
-    protected Cache<String, List<String>> namespacesCache;
+    protected Cache<String, List<NamespaceDTO>> namespacesCache;
     protected Cache<String, CachedSpaces> spacesCache;
     @Inject
     @WithAttributes(label = "Pipeline", description = "The Jenkinsfile used to define the Continous Delivery pipeline")
@@ -132,17 +134,17 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
 
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
-        this.github = AbstractGithubStep.createGitHubFacade(builder.getUIContext(), null);
-        this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
+        UIContext uiContext = builder.getUIContext();
+        this.github = AbstractGithubStep.createGitHubFacade(uiContext, null);
+        this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(uiContext);
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);
         final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
-        List<String> namespaces = namespacesCache.computeIfAbsent(key, k -> KubernetesClientHelper.loadNamespaces(kubernetesClient, key));
-
+        List<NamespaceDTO> namespaces = namespacesCache.computeIfAbsent(key, k -> Tenants.loadNamespaces(getMandatoryAuthHeader(uiContext)));
 
         StopWatch watch = new StopWatch();
 
-        final UIContext context = builder.getUIContext();
+        final UIContext context = uiContext;
         List<PipelineDTO> pipelineOptions = getPipelines(context, true);
         pipeline.setValueChoices(pipelineOptions);
         if (!pipelineOptions.isEmpty()) {
@@ -175,9 +177,9 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             builder.add(pipeline);
         }
 
-        kubernetesSpace.setValueChoices(namespaces);
+        kubernetesSpace.setValueChoices(Tenants.userNamespaces(namespaces));
         if (!namespaces.isEmpty()) {
-            kubernetesSpace.setDefaultValue(findDefaultNamespace(namespaces));
+            kubernetesSpace.setDefaultValue(Tenants.findDefaultUserNamespace(namespaces));
         }
         if (namespaces.size() > 1) {
             builder.add(kubernetesSpace);

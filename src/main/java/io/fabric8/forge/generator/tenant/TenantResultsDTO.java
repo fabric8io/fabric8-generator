@@ -14,26 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.fabric8.forge.generator;
+package io.fabric8.forge.generator.tenant;
 
-import io.fabric8.utils.Strings;
+public class TenantResultsDTO extends DtoSupport {
+    private TenantDataDTO data;
 
-/**
- */
-public class EnvironmentVariables {
-    public static final String KEYCLOAK_SAAS = "KEYCLOAK_SAAS_URL";
-    public static final String WIT_URL = "WIT_URL";
-    public static final String GOGS_URL = "GOGS_URL";
-    public static final String NAMESPACE = "KUBERNETES_NAMESPACE";
+    @Override
+    public String toString() {
+        return "TenantResultDTO{" +
+                "data=" + data +
+                '}';
+    }
 
-    public static final String TESTING_OAUTH_HEADER = "TESTING_OAUTH_HEADER";
-    public static final String OPENSHIFT_API_URL = "OPENSHIFT_API_URL";
+    public TenantDataDTO getData() {
+        return data;
+    }
 
-    public static String getWitApiURL() {
-        String witAPI = System.getenv(WIT_URL);
-        if (Strings.isNullOrBlank(witAPI)) {
-            witAPI = "https://api.openshift.io/";
-        }
-        return witAPI;
+    public void setData(TenantDataDTO data) {
+        this.data = data;
     }
 }
+

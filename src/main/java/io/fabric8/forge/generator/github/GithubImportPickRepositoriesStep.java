@@ -8,10 +8,11 @@
 package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.AttributeMapKeys;
-import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitRepositoryDTO;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
+import io.fabric8.forge.generator.tenant.NamespaceDTO;
+import io.fabric8.forge.generator.tenant.Tenants;
 import io.fabric8.kubernetes.api.Controller;
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Iterator;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPOSITORY_PATTERN;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_REPO_NAMES;
+import static io.fabric8.forge.generator.keycloak.TokenHelper.getMandatoryAuthHeader;
 
 /**
  * Lets the user configure the GitHub organisation and repo name that they want to pick for a new project
@@ -54,15 +56,16 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
     private GitHubFacade github;
     private Collection<GitRepositoryDTO> repositoryNames;
     private KubernetesClient kubernetesClient;
-    protected Cache<String, List<String>> namespacesCache;
-    private List<String> namespaces;
+    protected Cache<String, List<NamespaceDTO>> namespacesCache;
+    private List<NamespaceDTO> namespaces;
 
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
+        UIContext uiContext = builder.getUIContext();
         kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
         namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
-        namespaces = namespacesCache.computeIfAbsent(key, k -> KubernetesClientHelper.loadNamespaces(kubernetesClient, key));
+        namespaces = namespacesCache.computeIfAbsent(key, k -> Tenants.loadNamespaces(getMandatoryAuthHeader(builder.getUIContext())));
 
         repositoriesCache = cacheManager.getCache(CacheNames.GITHUB_REPOSITORIES_FOR_ORGANISATION);
 
@@ -103,7 +106,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
             context.addValidationError(gitRepositoryPattern, "Could not create OpenShiftClient. Maybe the Kubernetes server version is older than 1.7?");
         }
         Iterator<GitRepositoryDTO> it = value.iterator();
-        String userNameSpace = KubernetesClientHelper.findDefaultNamespace(namespaces);
+        String userNameSpace = Tenants.findDefaultUserNamespace(namespaces);
         if (userNameSpace == null ) {
             // Tenant not yet initialised properly!
             return;

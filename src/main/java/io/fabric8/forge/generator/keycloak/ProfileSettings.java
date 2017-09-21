@@ -19,6 +19,7 @@ package io.fabric8.forge.generator.keycloak;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.forge.generator.AttributeMapKeys;
+import io.fabric8.forge.generator.EnvironmentVariables;
 import io.fabric8.forge.generator.utils.JsonHelper;
 import io.fabric8.forge.generator.utils.WebClientHelpers;
 import io.fabric8.utils.Strings;
@@ -32,8 +33,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Map;
 
-import static io.fabric8.forge.generator.EnvironmentVariables.WIT_URL;
-
 /**
  */
 public class ProfileSettings {
@@ -43,10 +42,7 @@ public class ProfileSettings {
         if (Strings.isNullOrBlank(authHeader)) {
             return null;
         }
-        String witAPI = System.getenv(WIT_URL);
-        if (Strings.isNullOrBlank(witAPI)) {
-            witAPI = "https://api.openshift.io/";
-        }
+        String witAPI = EnvironmentVariables.getWitApiURL();
         String userSettingsUrl =  URLUtils.pathJoin(witAPI, "/api/user");
         String json = null;
         try {

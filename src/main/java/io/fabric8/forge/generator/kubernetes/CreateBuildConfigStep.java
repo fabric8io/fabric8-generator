@@ -29,6 +29,8 @@ import io.fabric8.forge.generator.git.GitClonedRepoDetails;
 import io.fabric8.forge.generator.git.GitProvider;
 import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand;
+import io.fabric8.forge.generator.tenant.NamespaceDTO;
+import io.fabric8.forge.generator.tenant.Tenants;
 import io.fabric8.forge.generator.utils.DomUtils;
 import io.fabric8.forge.generator.utils.MavenHelpers;
 import io.fabric8.forge.generator.utils.PomFileXml;
@@ -110,8 +112,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static io.fabric8.forge.generator.keycloak.TokenHelper.getMandatoryAuthHeader;
 import static io.fabric8.forge.generator.kubernetes.Base64Helper.base64decode;
-import static io.fabric8.forge.generator.kubernetes.KubernetesClientHelper.findDefaultNamespace;
 import static io.fabric8.project.support.BuildConfigHelper.createBuildConfig;
 
 /**
@@ -122,7 +124,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     protected static final String REGEX_SCM_SOURCE_FILTER_TRAIT_ELEMENT = "jenkins.scm.impl.trait.RegexSCMSourceFilterTrait";
 
     private static final transient Logger LOG = LoggerFactory.getLogger(CreateBuildConfigStep.class);
-    protected Cache<String, List<String>> namespacesCache;
+    protected Cache<String, List<NamespaceDTO>> namespacesCache;
     @Inject
     @WithAttributes(label = "Jenkins Space", required = true, description = "The space running Jenkins")
     private UISelectOne<String> jenkinsSpace;
@@ -137,7 +139,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     private KubernetesClient kubernetesClient;
     private int retryTriggerBuildCount = 5;
     private boolean useUiidForBotSecret = true;
-    private List<String> namespaces;
+    private List<NamespaceDTO> namespaces;
 
     /**
      * Combines the job patterns.
@@ -167,11 +169,11 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(builder.getUIContext());
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         final String key = KubernetesClientHelper.getUserCacheKey(kubernetesClient);
-        this.namespaces = namespacesCache.computeIfAbsent(key, k -> KubernetesClientHelper.loadNamespaces(getKubernetesClient(), key));
+        this.namespaces = namespacesCache.computeIfAbsent(key, k -> Tenants.loadNamespaces(getMandatoryAuthHeader(builder.getUIContext())));
 
-        jenkinsSpace.setValueChoices(namespaces);
+        jenkinsSpace.setValueChoices(Tenants.jenkinsNamespaces(namespaces));
         if (!namespaces.isEmpty()) {
-            jenkinsSpace.setDefaultValue(KubernetesClientHelper.findDefaultJenkinsSpace(namespaces));
+            jenkinsSpace.setDefaultValue(Tenants.findDefaultJenkinsNamespace(namespaces));
         }
 
         triggerBuild.setDefaultValue(true);
@@ -192,7 +194,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         String namespace = (String) attributeMap.get(AttributeMapKeys.NAMESPACE);
         if (Strings.isNullOrBlank(namespace)) {
             // we probably didn't come from the ChoosePipelineStep?
-            namespace = findDefaultNamespace(namespaces);
+            namespace = Tenants.findDefaultUserNamespace(namespaces);
         }
         String jenkinsNamespace = jenkinsSpace.getValue();
         if (Strings.isNullOrBlank(jenkinsNamespace)) {

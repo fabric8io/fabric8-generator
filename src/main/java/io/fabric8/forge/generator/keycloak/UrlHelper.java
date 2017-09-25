@@ -27,7 +27,7 @@ public final class UrlHelper {
     }
 
     public static Map<String, String> splitQuery(String query) {
-        Map<String, String> queryPairs = new HashMap<String, String>();
+        Map<String, String> queryPairs = new HashMap<>();
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             int delimiterIndex = pair.indexOf("=");

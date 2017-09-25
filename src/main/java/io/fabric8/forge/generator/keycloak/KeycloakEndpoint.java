@@ -32,7 +32,7 @@ public enum KeycloakEndpoint {
     private final String name;
     private final String endpoint;
 
-    private KeycloakEndpoint(String name, String path) {
+    KeycloakEndpoint(String name, String path) {
         this.name = name;
         this.endpoint = URLUtils.pathJoin(Configuration.keycloakSaaSURL(), path);
     }

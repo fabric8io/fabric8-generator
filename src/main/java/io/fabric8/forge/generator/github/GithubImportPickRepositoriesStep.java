@@ -80,12 +80,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         this.repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRepositoriesForOrganisation(gitOrganisation));
 
         gitRepositoryPattern.setValueChoices(repositoryNames);
-        gitRepositoryPattern.setItemLabelConverter(new Converter<GitRepositoryDTO, String>() {
-            @Override
-            public String convert(GitRepositoryDTO dto) {
-                return dto.getId();
-            }
-        });
+        gitRepositoryPattern.setItemLabelConverter(dto -> dto.getId());
         builder.add(gitRepositoryPattern);
     }
 

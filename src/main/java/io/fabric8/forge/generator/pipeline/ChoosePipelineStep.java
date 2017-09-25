@@ -152,12 +152,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
             pipeline.setDefaultValue(pipelineOptions.get(pipelineOptions.size() - 1));
 
         }
-        pipeline.setItemLabelConverter(new Converter<PipelineDTO, String>() {
-            @Override
-            public String convert(PipelineDTO pipeline) {
-                return pipeline.getLabel();
-            }
-        });
+        pipeline.setItemLabelConverter(pipeline -> pipeline.getLabel());
 
         pipeline.setValueConverter(text -> getPipelineForValue(context, text));
         if (getCurrentSelectedProject(context) != null) {
@@ -620,12 +615,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
         Set<String> buildersFound = new HashSet<>();
         try {
             if (dir != null) {
-                Filter<File> filter = new Filter<File>() {
-                    @Override
-                    public boolean matches(File file) {
-                        return file.isFile() && Objects.equal(JENKINSFILE, file.getName());
-                    }
-                };
+                Filter<File> filter = file -> file.isFile() && Objects.equal(JENKINSFILE, file.getName());
                 Set<File> files = Files.findRecursive(dir, filter);
                 List<PipelineDTO> pipelines = new ArrayList<>();
                 for (File file : files) {

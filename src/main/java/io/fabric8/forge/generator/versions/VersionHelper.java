@@ -67,7 +67,7 @@ public final class VersionHelper {
 
     protected static Map<String, String> getGroupArtifactVersionMap() {
         if(groupArtifactVersionMap == null) {
-            groupArtifactVersionMap = new HashMap();
+            groupArtifactVersionMap = new HashMap<>();
             InputStream in = VersionHelper.class.getResourceAsStream("versions.properties");
             if(in == null) {
                 LOG.warn("Could not find versions.properties on the classpath!");

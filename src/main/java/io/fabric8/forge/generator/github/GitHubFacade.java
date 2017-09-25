@@ -109,7 +109,7 @@ public class GitHubFacade {
 
 
     public Collection<GitOrganisationDTO> loadGithubOrganisations(UIBuilder builder) {
-        SortedSet<GitOrganisationDTO> organisations = new TreeSet();
+        SortedSet<GitOrganisationDTO> organisations = new TreeSet<>();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {
             organisations.add(new GitOrganisationDTO(username, MY_PERSONAL_GITHUB_ACCOUNT));

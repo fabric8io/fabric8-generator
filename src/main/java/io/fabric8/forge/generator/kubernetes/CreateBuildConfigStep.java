@@ -247,7 +247,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
 
         String jenkinsJobUrl = null;
         String cheStackId = null;
-        String message = "";
+        String message;
         Boolean addCI = addCIWebHooks.getValue();
         boolean isGitHubOrganisationFolder = gitProvider.isGitHub();
         String gitToken = details.tokenOrPassword();
@@ -259,6 +259,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
 
         List<GitRepoDTO> gitRepos = getGitRepos(uiContext, gitRepoNameValue);
+        StringBuilder messageBuilder = new StringBuilder();
         for (GitRepoDTO gitRepo : gitRepos) {
             String gitUrl = gitRepo.getUrl();
             gitRepoNameValue = gitRepo.getRepoName();
@@ -338,8 +339,10 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
             controller.applyBuildConfig(buildConfig, "from project " + projectName);
 
-            message += "Created OpenShift BuildConfig " + namespace + "/" + projectName;
+            messageBuilder.append("Created OpenShift BuildConfig ").append(namespace).append("/").append(projectName);
         }
+
+        message = messageBuilder.toString();
         List<String> warnings = new ArrayList<>();
 
         if (addCI) {

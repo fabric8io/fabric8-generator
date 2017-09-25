@@ -161,7 +161,7 @@ public class GitHubFacade {
         }
     }
 
-    public Collection<GitRepositoryDTO> getRespositoriesForOrganisation(String orgName) {
+    public Collection<GitRepositoryDTO> getRepositoriesForOrganisation(String orgName) {
         Set<GitRepositoryDTO> answer = new TreeSet<>();
         GitHub github = this.github;
         if (github != null) {
@@ -170,7 +170,7 @@ public class GitHubFacade {
                 Map<String, GHRepository> repositories;
                 String username = details.getUsername();
                 if (Strings.isNullOrBlank(orgName) || orgName.equals(username)) {
-                    Map<String,GHRepository> repositoriesTree = new TreeMap<String, GHRepository>();
+                    Map<String,GHRepository> repositoriesTree = new TreeMap<>();
                     // With OWNER, retrieve public and private repositories owned by current user (only).
                     for (GHRepository r : github.getMyself().listRepositories(100, GHMyself.RepositoryListFilter.OWNER)) {
                         repositoriesTree.put(r.getName(),r);
@@ -302,7 +302,7 @@ public class GitHubFacade {
     }
 
     private void removeOldWebHooks(GHRepository repository, String webhookUrl) {
-        List<GHHook> hooks = null;
+        List<GHHook> hooks;
         try {
             hooks = repository.getHooks();
         } catch (IOException e) {

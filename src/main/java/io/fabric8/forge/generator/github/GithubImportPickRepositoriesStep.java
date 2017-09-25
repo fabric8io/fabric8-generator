@@ -77,7 +77,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
         String userKey = github.getDetails().getUserCacheKey();
         String orgKey = userKey + "/" + gitOrganisation;
 
-        this.repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRespositoriesForOrganisation(gitOrganisation));
+        this.repositoryNames = repositoriesCache.computeIfAbsent(orgKey, k -> github.getRepositoriesForOrganisation(gitOrganisation));
 
         gitRepositoryPattern.setValueChoices(repositoryNames);
         gitRepositoryPattern.setItemLabelConverter(new Converter<GitRepositoryDTO, String>() {

@@ -31,12 +31,7 @@ public class WebClientHelpers {
     public static Client createClientWihtoutHostVerification() {
         ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder();
         clientBuilder.disableTrustManager();
-        clientBuilder.hostnameVerifier(new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        });
+        clientBuilder.hostnameVerifier((s, sslSession) -> true);
         return clientBuilder.build();
     }
 }

@@ -60,12 +60,7 @@ public abstract class AbstractGitProviderCommand implements UIWizard {
         if (gitProviders.size() > 1) {
             builder.add(gitProvider);
         }
-        gitProvider.setItemLabelConverter(new Converter<GitProvider, String>() {
-            @Override
-            public String convert(GitProvider gitProvider) {
-                return gitProvider.getName();
-            }
-        });
+        gitProvider.setItemLabelConverter(gitProvider -> gitProvider.getName());
 
         if (!gitProviders.isEmpty()) {
             gitProvider.setDefaultValue(pickDefaultGitProvider(this.gitProviders));

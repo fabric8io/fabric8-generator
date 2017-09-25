@@ -109,12 +109,7 @@ public class Fabric8ProjectInfoStep extends ProjectInfoStep {
             organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGithubOrganisations(builder));
         }
         gitOrganisation.setValueChoices(organisations);
-        gitOrganisation.setItemLabelConverter(new Converter<GitOrganisationDTO, String>() {
-            @Override
-            public String convert(GitOrganisationDTO organisation) {
-                return organisation.getName();
-            }
-        });
+        gitOrganisation.setItemLabelConverter(organisation -> organisation.getName());
         String userName = github.getDetails().getUsername();
         if (Strings.isNotBlank(userName)) {
             for (GitOrganisationDTO organisation : organisations) {

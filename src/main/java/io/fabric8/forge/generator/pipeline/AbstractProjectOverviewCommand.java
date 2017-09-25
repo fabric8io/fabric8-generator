@@ -50,134 +50,94 @@ public abstract class AbstractProjectOverviewCommand extends AbstractDevToolsCom
     protected List<FileProcessor> loadFileMatches() {
         List<FileProcessor> answer = new ArrayList<>();
 
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (level == ROOT_LEVEL && java.util.Objects.equals(name, "pom.xml")) {
-                               overview.addBuilder("maven");
-                               overview.addPerspective("forge");
-                               // check if we have camel/funktion/and others in the maven project
-                               try {
-                                   String text = IOHelpers.readFully(file);
-                                   // just do a quick scan for dependency names as using forge project API is slower
-                                   if (text.contains("org.apache.camel")) {
-                                       overview.addPerspective("camel");
-                                   }
-                                   if (text.contains("io.fabric8.funktion")) {
-                                       overview.addPerspective("funktion");
-                                   }
-                                   if (text.contains("fabric8-profiles")) {
-                                       overview.addPerspective("fabric8-profiles");
-                                   }
-                               } catch (IOException e) {
-                                   // ignore
-                               }
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (level == ROOT_LEVEL && java.util.Objects.equals(name, "Jenkinsfile")) {
-                               overview.addBuilder("jenkinsfile");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if ((level == ROOT_LEVEL && java.util.Objects.equals(name, "package.json")) || java.util.Objects
-                                   .equals(extension, "js")) {
-                               overview.addBuilder("node");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (java.util.Objects.equals(extension, "go")) {
-                               overview.addBuilder("golang");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (java.util.Objects.equals(name, "Rakefile") || java.util.Objects.equals(extension, "rb")) {
-                               overview.addBuilder("ruby");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (java.util.Objects.equals(extension, "swift")) {
-                               overview.addBuilder("swift");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (java.util.Objects.equals(name, "urls.py") || java.util.Objects.equals(extension, "wsgi.py")) {
-                               overview.addBuilder("django");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (java.util.Objects.equals(extension, "php")) {
-                               overview.addBuilder("php");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (java.util.Objects.equals(extension, "cs")) {
-                               overview.addBuilder("dotnet");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
-        answer.add(new FileProcessor() {
-                       @Override
-                       public boolean processes(ProjectOverviewDTO overview, File file, String name, String extension, int level) {
-                           if (java.util.Objects.equals(extension, "sbt") || java.util.Objects.equals(extension, "scala")) {
-                               overview.addBuilder("sbt");
-                               return true;
-                           }
-                           return false;
-                       }
-                   }
-        );
+        answer.add((overview, file, name, extension, level) -> {
+            if (level == ROOT_LEVEL && java.util.Objects.equals(name, "pom.xml")) {
+                overview.addBuilder("maven");
+                overview.addPerspective("forge");
+                // check if we have camel/funktion/and others in the maven project
+                try {
+                    String text = IOHelpers.readFully(file);
+                    // just do a quick scan for dependency names as using forge project API is slower
+                    if (text.contains("org.apache.camel")) {
+                        overview.addPerspective("camel");
+                    }
+                    if (text.contains("io.fabric8.funktion")) {
+                        overview.addPerspective("funktion");
+                    }
+                    if (text.contains("fabric8-profiles")) {
+                        overview.addPerspective("fabric8-profiles");
+                    }
+                } catch (IOException e) {
+                    // ignore
+                }
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (level == ROOT_LEVEL && java.util.Objects.equals(name, "Jenkinsfile")) {
+                overview.addBuilder("jenkinsfile");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if ((level == ROOT_LEVEL && java.util.Objects.equals(name, "package.json")) || java.util.Objects
+                    .equals(extension, "js")) {
+                overview.addBuilder("node");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (java.util.Objects.equals(extension, "go")) {
+                overview.addBuilder("golang");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (java.util.Objects.equals(name, "Rakefile") || java.util.Objects.equals(extension, "rb")) {
+                overview.addBuilder("ruby");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (java.util.Objects.equals(extension, "swift")) {
+                overview.addBuilder("swift");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (java.util.Objects.equals(name, "urls.py") || java.util.Objects.equals(extension, "wsgi.py")) {
+                overview.addBuilder("django");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (java.util.Objects.equals(extension, "php")) {
+                overview.addBuilder("php");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (java.util.Objects.equals(extension, "cs")) {
+                overview.addBuilder("dotnet");
+                return true;
+            }
+            return false;
+        });
+        answer.add((overview, file, name, extension, level) -> {
+            if (java.util.Objects.equals(extension, "sbt") || java.util.Objects.equals(extension, "scala")) {
+                overview.addBuilder("sbt");
+                return true;
+            }
+            return false;
+        });
 
         return answer;
     }

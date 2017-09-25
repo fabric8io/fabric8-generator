@@ -936,7 +936,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
     private void setGithubOrgJobOwnerAndRepo(Document doc, String gitOwnerName, String gitRepoName) {
         Element githubNavigator = getGithubScmNavigatorElement(doc);
         if (githubNavigator == null) {
-            new IllegalArgumentException("No element <" + GITHUB_SCM_NAVIGATOR_ELEMENT + "> found in the github organisation job!");
+            throw new IllegalArgumentException("No element <" + GITHUB_SCM_NAVIGATOR_ELEMENT + "> found in the github organisation job!");
         }
 
         Element repoOwner = DomUtils.mandatoryFirstChild(githubNavigator, "repoOwner");

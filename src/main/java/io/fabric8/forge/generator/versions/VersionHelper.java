@@ -16,16 +16,14 @@
 package io.fabric8.forge.generator.versions;
 
 import io.fabric8.utils.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class VersionHelper {
     private static final transient Logger LOG = LoggerFactory.getLogger(VersionHelper.class);
@@ -83,13 +81,12 @@ public final class VersionHelper {
                 }
 
                 Set entries = properties.entrySet();
-                Iterator var3 = entries.iterator();
 
-                while(var3.hasNext()) {
-                    Map.Entry entry = (Map.Entry)var3.next();
+                for (Object entry1 : entries) {
+                    Map.Entry entry = (Map.Entry) entry1;
                     Object key = entry.getKey();
                     Object value = entry.getValue();
-                    if(key != null && value != null) {
+                    if (key != null && value != null) {
                         groupArtifactVersionMap.put(key.toString(), value.toString());
                     }
                 }
@@ -98,6 +95,7 @@ public final class VersionHelper {
 
         return groupArtifactVersionMap;
     }
+
     public static String after(String text, String after) {
         if (!text.contains(after)) {
             return null;

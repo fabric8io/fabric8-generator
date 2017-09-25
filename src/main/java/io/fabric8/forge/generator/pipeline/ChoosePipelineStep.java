@@ -40,10 +40,22 @@ import io.fabric8.utils.Filter;
 import io.fabric8.utils.IOHelpers;
 import io.fabric8.utils.Objects;
 import io.fabric8.utils.Strings;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.inject.Inject;
 import org.infinispan.Cache;
-import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.projects.Project;
-import org.jboss.forge.addon.ui.context.*;
+import org.jboss.forge.addon.ui.context.UIBuilder;
+import org.jboss.forge.addon.ui.context.UIContext;
+import org.jboss.forge.addon.ui.context.UIExecutionContext;
+import org.jboss.forge.addon.ui.context.UINavigationContext;
 import org.jboss.forge.addon.ui.input.UIInput;
 import org.jboss.forge.addon.ui.input.UISelectOne;
 import org.jboss.forge.addon.ui.metadata.UICommandMetadata;
@@ -61,11 +73,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
-
-import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
 
 import static io.fabric8.forge.generator.che.CheStackDetector.parseXmlFile;
 import static io.fabric8.forge.generator.keycloak.TokenHelper.getMandatoryAuthHeader;
@@ -239,7 +246,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     }
 
     private String formatRepoName(ArrayList<String> reposNameWithJenkinsFile) {
-        StringBuffer formattedRepos= new StringBuffer();
+        StringBuilder formattedRepos= new StringBuilder();
         formattedRepos.append("(");
         for (String repoName : reposNameWithJenkinsFile) {
             formattedRepos.append(repoName);

@@ -15,7 +15,6 @@
  */
 package io.fabric8.forge.generator.versions;
 
-import io.fabric8.forge.addon.utils.MavenHelpers;
 import io.fabric8.utils.Strings;
 import org.junit.Test;
 

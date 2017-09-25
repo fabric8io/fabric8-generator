@@ -18,7 +18,6 @@ package io.fabric8.forge.generator.git;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.interfaces.Claim;
 import io.fabric8.forge.generator.keycloak.KeyCloakFailureException;
 import io.fabric8.forge.generator.keycloak.KeycloakEndpoint;
 import io.fabric8.forge.generator.keycloak.TokenHelper;

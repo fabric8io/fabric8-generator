@@ -24,8 +24,6 @@ import io.fabric8.forge.generator.keycloak.ProfileSettingsDTO;
 import io.fabric8.forge.generator.keycloak.TokenHelper;
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.forge.generator.pipeline.ChoosePipelineStep;
-import io.openshift.launchpad.ui.booster.ChooseMissionStep;
-import io.openshift.launchpad.ui.booster.ChooseRuntimeStep;
 import io.openshift.launchpad.ui.booster.DeploymentType;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;

@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * When running on premise lets let the user setup their github credentials and store them in a Secret
  */
-public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep implements UIWizardStep {
+public class GitHubSetupCredentialsStep extends AbstractGitSetupCredentialsStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     @Inject
@@ -75,7 +75,7 @@ public class GithubSetupCredentialsStep extends AbstractGitSetupCredentialsStep 
 /*
       if (details.hasValidData()) {
          NavigationResultBuilder builder = NavigationResultBuilder.create();
-         builder.add(GithubSetupCredentialsStep.class);
+         builder.add(GitHubSetupCredentialsStep.class);
          return builder.build();
       }
 */

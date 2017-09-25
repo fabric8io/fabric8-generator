@@ -9,7 +9,9 @@ package io.fabric8.forge.generator.github;
 
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.utils.Strings;
-import org.jboss.forge.addon.convert.Converter;
+import java.util.ArrayList;
+import java.util.Collection;
+import javax.inject.Inject;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -24,10 +26,6 @@ import org.jboss.forge.addon.ui.wizard.UIWizardStep;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ACCOUNT;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_ORGANISATION;
 import static io.fabric8.forge.generator.AttributeMapKeys.GIT_OWNER_NAME;
@@ -35,7 +33,7 @@ import static io.fabric8.forge.generator.AttributeMapKeys.GIT_OWNER_NAME;
 /**
  * Lets the user select an organisation
  */
-public class GithubImportPickOrganisationStep extends AbstractGithubStep implements UIWizardStep {
+public class GitHubImportPickOrganisationStep extends AbstractGitHubStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
     @Inject
     @WithAttributes(label = "Organisation", required = true, description = "The github organisation to import repositories from")
@@ -46,13 +44,13 @@ public class GithubImportPickOrganisationStep extends AbstractGithubStep impleme
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
 
-        this.github = createGithubFacade(builder.getUIContext());
+        this.github = createGitHubFacade(builder.getUIContext());
 
         // TODO cache this per user every say 30 seconds!
         Collection<GitOrganisationDTO> organisations = new ArrayList<>();
         if (github != null && github.isDetailsValid()) {
             String orgKey = github.getDetails().getUserCacheKey();
-            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGithubOrganisations(builder));
+            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGitHubOrganisations(builder));
         }
         gitOrganisation.setValueChoices(organisations);
         gitOrganisation.setItemLabelConverter(organisation -> organisation.getId());

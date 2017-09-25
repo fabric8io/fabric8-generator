@@ -43,7 +43,7 @@ public class GitHubImportParameters {
         return orgAndRepo;
     }
 
-    public GitHubFacade getGithub() {
+    public GitHubFacade getGitHub() {
         return github;
     }
 }

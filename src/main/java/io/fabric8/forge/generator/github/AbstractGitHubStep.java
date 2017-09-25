@@ -30,18 +30,18 @@ import org.slf4j.LoggerFactory;
 
 /**
  */
-public abstract class AbstractGithubStep extends AbstractGitRepoStep {
-    private static final transient Logger LOG = LoggerFactory.getLogger(AbstractGithubStep.class);
+public abstract class AbstractGitHubStep extends AbstractGitRepoStep {
+    private static final transient Logger LOG = LoggerFactory.getLogger(AbstractGitHubStep.class);
 
-    public AbstractGithubStep() {
+    public AbstractGitHubStep() {
         super(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, CacheNames.GITHUB_ORGANISATIONS);
     }
 
-    public AbstractGithubStep(CacheFacade cacheManager) {
+    public AbstractGitHubStep(CacheFacade cacheManager) {
         super(CacheNames.GITHUB_ACCOUNT_FROM_SECRET, CacheNames.GITHUB_ORGANISATIONS, cacheManager);
     }
 
-    protected GitHubFacade createGithubFacade(UIContext context) {
+    protected GitHubFacade createGitHubFacade(UIContext context) {
         return createGitHubFacade(context, this.accountCache);
     }
 

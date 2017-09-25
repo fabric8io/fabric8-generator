@@ -91,7 +91,7 @@ public class GitHubImportRepoStep extends AbstractDevToolsCommand implements UIW
         }
 
 
-        GitHubFacade github = importParameters.getGithub();
+        GitHubFacade github = importParameters.getGitHub();
         if (github == null) {
             return Results.fail("No github account setup");
         }

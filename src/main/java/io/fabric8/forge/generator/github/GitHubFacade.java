@@ -108,7 +108,7 @@ public class GitHubFacade {
     }
 
 
-    public Collection<GitOrganisationDTO> loadGithubOrganisations(UIBuilder builder) {
+    public Collection<GitOrganisationDTO> loadGitHubOrganisations(UIBuilder builder) {
         SortedSet<GitOrganisationDTO> organisations = new TreeSet<>();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {

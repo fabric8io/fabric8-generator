@@ -20,7 +20,6 @@ import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.utils.Strings;
 import org.infinispan.Cache;
-import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -47,7 +46,7 @@ import static io.fabric8.forge.generator.keycloak.TokenHelper.getMandatoryAuthHe
 /**
  * Lets the user configure the GitHub organisation and repo name that they want to pick for a new project
  */
-public class GithubImportPickRepositoriesStep extends AbstractGithubStep implements UIWizardStep {
+public class GitHubImportPickRepositoriesStep extends AbstractGitHubStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
     protected Cache<String, Collection<GitRepositoryDTO>> repositoriesCache;
     @Inject
@@ -69,7 +68,7 @@ public class GithubImportPickRepositoriesStep extends AbstractGithubStep impleme
 
         repositoriesCache = cacheManager.getCache(CacheNames.GITHUB_REPOSITORIES_FOR_ORGANISATION);
 
-        github = createGithubFacade(builder.getUIContext());
+        github = createGitHubFacade(builder.getUIContext());
 
         Map<Object, Object> attributeMap = builder.getUIContext().getAttributeMap();
         final String gitOrganisation = (String) attributeMap.get(AttributeMapKeys.GIT_ORGANISATION);

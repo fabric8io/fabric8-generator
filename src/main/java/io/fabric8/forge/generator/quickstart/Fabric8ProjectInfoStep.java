@@ -26,7 +26,6 @@ import io.fabric8.utils.Strings;
 import io.openshift.launchpad.ui.booster.DeploymentType;
 import io.openshift.launchpad.ui.booster.ProjectInfoStep;
 import org.infinispan.Cache;
-import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -50,7 +49,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static io.fabric8.forge.generator.git.AbstractGitRepoStep.getOrganisationName;
-import static io.fabric8.forge.generator.github.AbstractGithubStep.createGitHubFacade;
+import static io.fabric8.forge.generator.github.AbstractGitHubStep.createGitHubFacade;
 import static io.fabric8.forge.generator.pipeline.AbstractDevToolsCommand.getSelectionFolder;
 
 /**
@@ -106,7 +105,7 @@ public class Fabric8ProjectInfoStep extends ProjectInfoStep {
 
         if (github != null && github.isDetailsValid()) {
             String orgKey = github.getDetails().getUserCacheKey();
-            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGithubOrganisations(builder));
+            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGitHubOrganisations(builder));
         }
         gitOrganisation.setValueChoices(organisations);
         gitOrganisation.setItemLabelConverter(organisation -> organisation.getName());
@@ -135,7 +134,7 @@ public class Fabric8ProjectInfoStep extends ProjectInfoStep {
         String orgName = getOrganisationName(gitOrganisation.getValue());
         String repoName = getGithubRepositoryNameValue();
         if (Strings.isNotBlank(repoName)) {
-            
+
         }
 
         if (Strings.isNotBlank(orgName)) {

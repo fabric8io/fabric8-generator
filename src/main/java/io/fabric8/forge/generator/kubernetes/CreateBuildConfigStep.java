@@ -842,13 +842,13 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                 LOG.warn("Could not parse current config.xml on " + namespace + "/" + configMapName + ". " + e, e);
             }
         }
-        if (document == null || getGithubScmNavigatorElement(document) == null) {
+        if (document == null || getGitHubScmNavigatorElement(document) == null) {
             document = parseGitHubOrgJobConfig();
             if (document == null) {
                 throw new IllegalStateException("Cannot parse the template github org job XML!");
             }
         }
-        setGithubOrgJobOwnerAndRepo(document, gitOwnerName, gitRepoName);
+        setGitHubOrgJobOwnerAndRepo(document, gitOwnerName, gitRepoName);
 
         try {
             configXml = DomHelper.toXml(document);
@@ -892,7 +892,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         }
 
         boolean create = false;
-        if (document == null || getGithubScmNavigatorElement(document) == null) {
+        if (document == null || getGitHubScmNavigatorElement(document) == null) {
             create = true;
             document = parseGitHubOrgJobConfig();
             if (document == null) {
@@ -900,7 +900,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             }
         }
 
-        setGithubOrgJobOwnerAndRepo(document, gitOwnerName, gitRepoName);
+        setGitHubOrgJobOwnerAndRepo(document, gitOwnerName, gitRepoName);
 
         final Entity entity = Entity.entity(document, MediaType.TEXT_XML);
         Response answer;
@@ -933,8 +933,8 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         return answer;
     }
 
-    private void setGithubOrgJobOwnerAndRepo(Document doc, String gitOwnerName, String gitRepoName) {
-        Element githubNavigator = getGithubScmNavigatorElement(doc);
+    private void setGitHubOrgJobOwnerAndRepo(Document doc, String gitOwnerName, String gitRepoName) {
+        Element githubNavigator = getGitHubScmNavigatorElement(doc);
         if (githubNavigator == null) {
             throw new IllegalArgumentException("No element <" + GITHUB_SCM_NAVIGATOR_ELEMENT + "> found in the github organisation job!");
         }
@@ -960,7 +960,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
         DomUtils.setElementText(pattern, newPattern);
     }
 
-    protected Element getGithubScmNavigatorElement(Document doc) {
+    protected Element getGitHubScmNavigatorElement(Document doc) {
         Element githubNavigator = null;
         Element rootElement = doc.getDocumentElement();
         if (rootElement != null) {

@@ -24,7 +24,7 @@ import org.jboss.forge.addon.ui.context.UIBuilder;
 
 import java.io.File;
 
-import static io.fabric8.forge.generator.github.AbstractGithubStep.createGitHubFacade;
+import static io.fabric8.forge.generator.github.AbstractGitHubStep.createGitHubFacade;
 
 /**
  * Performs a git clone of a repo via github

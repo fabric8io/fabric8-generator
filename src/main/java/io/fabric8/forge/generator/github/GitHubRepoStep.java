@@ -11,7 +11,6 @@ import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.git.GitOrganisationDTO;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
-import org.jboss.forge.addon.convert.Converter;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -46,7 +45,7 @@ import static io.fabric8.forge.generator.AttributeMapKeys.GIT_URL;
 /**
  * Lets the user configure the GitHub organisation and repo name that they want to pick for a new project
  */
-public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
+public class GitHubRepoStep extends AbstractGitHubStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
     @Inject
     @WithAttributes(label = "Organisation", required = true, description = "The github organisation to create this project inside")
@@ -62,13 +61,13 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
     private GitHubFacade github;
 
     @Inject
-    public GithubRepoStep() {
+    public GitHubRepoStep() {
     }
 
     /**
      * TODO - hack so we can create this step inside other steps for validation
      */
-    public GithubRepoStep(CacheFacade cacheManager, InputComponentFactory inputComponentFactory) {
+    public GitHubRepoStep(CacheFacade cacheManager, InputComponentFactory inputComponentFactory) {
         super(cacheManager);
         this.gitOrganisation = inputComponentFactory.createSelectOne("gitOrganisation", 'o', GitOrganisationDTO.class);
         // TODO note the use of the 'named' field so we generate validation errors on the first wizard page
@@ -80,12 +79,12 @@ public class GithubRepoStep extends AbstractGithubStep implements UIWizardStep {
     public void initializeUI(final UIBuilder builder) throws Exception {
         super.initializeUI(builder);
 
-        this.github = createGithubFacade(builder.getUIContext());
+        this.github = createGitHubFacade(builder.getUIContext());
 
         Collection<GitOrganisationDTO> organisations = new ArrayList<>();
         if (github != null && github.isDetailsValid()) {
             String orgKey = github.getDetails().getUserCacheKey();
-            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGithubOrganisations(builder));
+            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGitHubOrganisations(builder));
         }
         gitOrganisation.setValueChoices(organisations);
         gitOrganisation.setItemLabelConverter(organisation -> organisation.getName());

@@ -23,7 +23,7 @@ import io.fabric8.forge.generator.AttributeMapKeys;
 import io.fabric8.forge.generator.cache.CacheFacade;
 import io.fabric8.forge.generator.cache.CacheNames;
 import io.fabric8.forge.generator.git.GitClonedRepoDetails;
-import io.fabric8.forge.generator.github.AbstractGithubStep;
+import io.fabric8.forge.generator.github.AbstractGitHubStep;
 import io.fabric8.forge.generator.github.GitHubFacade;
 import io.fabric8.forge.generator.kubernetes.CachedSpaces;
 import io.fabric8.forge.generator.kubernetes.KubernetesClientHelper;
@@ -142,7 +142,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     @Override
     public void initializeUI(UIBuilder builder) throws Exception {
         UIContext uiContext = builder.getUIContext();
-        this.github = AbstractGithubStep.createGitHubFacade(uiContext, null);
+        this.github = AbstractGitHubStep.createGitHubFacade(uiContext, null);
         this.kubernetesClient = KubernetesClientHelper.createKubernetesClient(uiContext);
         this.namespacesCache = cacheManager.getCache(CacheNames.USER_NAMESPACES);
         this.spacesCache = cacheManager.getCache(CacheNames.USER_SPACES);

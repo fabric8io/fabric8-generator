@@ -16,8 +16,6 @@
  */
 package io.fabric8.forge.generator.che;
 
-/**
- */
 public enum CheStack {
     Vertx("vert.x", "Vert.x"),
     SpringBoot("spring-boot", "Spring Boot"),
@@ -28,7 +26,7 @@ public enum CheStack {
     private final String id;
     private final String name;
 
-    private CheStack(String id, String name) {
+    CheStack(String id, String name) {
         this.id = id;
         this.name = name;
     }

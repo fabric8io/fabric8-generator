@@ -409,11 +409,11 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
                         return Results.fail("Failed to create Jenkins Organisation ConfigMap:: " + e, e);
                     }
                 }
-            } else {
-                // lets trigger the build
-                if (openShiftClient != null) {
-                    triggerBuild(openShiftClient, namespace, projectName);
-                }
+            }
+            // lets trigger the build
+            Boolean triggerBuildFlag = triggerBuild.getValue();
+            if (openShiftClient != null && triggerBuildFlag != null && triggerBuildFlag.booleanValue()) {
+                triggerBuild(openShiftClient, namespace, projectName);
             }
 
             for (String gitRepoName : gitRepoNameList) {
@@ -536,7 +536,7 @@ public class CreateBuildConfigStep extends AbstractDevToolsCommand implements UI
             String triggeredBuildName;
             BuildRequest request = new BuildRequestBuilder().
                     withNewMetadata().withName(projectName).endMetadata().
-                    addNewTriggeredBy().withMessage("Manually triggered").endTriggeredBy().
+                    addNewTriggeredBy().withMessage("Forge triggered").endTriggeredBy().
                     build();
             try {
                 Build build = openShiftClient.buildConfigs().inNamespace(namespace).withName(projectName).instantiate(request);

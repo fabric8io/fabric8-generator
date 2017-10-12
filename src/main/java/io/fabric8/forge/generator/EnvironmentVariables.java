@@ -32,7 +32,7 @@ public class EnvironmentVariables {
     public static String getWitApiURL() {
         String witAPI = System.getenv(WIT_URL);
         if (Strings.isNullOrBlank(witAPI)) {
-            witAPI = "https://api.openshift.io/";
+            witAPI = "http://core/";
         }
         return witAPI;
     }

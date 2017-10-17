@@ -36,12 +36,12 @@ public class ValidBoosters {
      * OSO free tier, OSO paid, OSCP etc
      */
     private static final Set<String> validIds = new HashSet<>(Arrays.asList(
-            "spring-boot-rest-http-booster",
-            "spring-boot-health-check-booster",
+            "spring-boot-rest-http-",
+            "spring-boot-health-check-",
 
-            "vertx-configmap-booster",
-            "vertx-http-booster",
-            "vertx-health-check-booster",
+            "vertx-configmap-",
+            "vertx-http-",
+            "vertx-health-check-",
 
             "does-not-exist-to-make-auto-PRs-easier;)"
     ));
@@ -56,6 +56,11 @@ public class ValidBoosters {
             LOG.debug("Booster id " + id + " name: " + name + " " + booster);
         }
 
-        return validIds.contains(id);
+        for (String validId : validIds) {
+            if (id.startsWith(validId)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

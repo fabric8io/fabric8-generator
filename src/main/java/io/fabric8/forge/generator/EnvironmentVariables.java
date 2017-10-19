@@ -23,6 +23,7 @@ import io.fabric8.utils.Strings;
 public class EnvironmentVariables {
     public static final String KEYCLOAK_SAAS = "KEYCLOAK_SAAS_URL";
     public static final String WIT_URL = "WIT_URL";
+    public static final String AUTH_URL = "AUTH_URL";
     public static final String GOGS_URL = "GOGS_URL";
     public static final String NAMESPACE = "KUBERNETES_NAMESPACE";
 
@@ -35,5 +36,13 @@ public class EnvironmentVariables {
             witAPI = "https://api.openshift.io/";
         }
         return witAPI;
+    }
+
+    public static String getAuthApiURL() {
+        String authAPI = System.getenv(AUTH_URL);
+        if (Strings.isNullOrBlank(authAPI)) {
+            authAPI = "https://auth.openshift.io/";
+        }
+        return authAPI;
     }
 }

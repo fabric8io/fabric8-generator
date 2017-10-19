@@ -18,6 +18,7 @@ package io.fabric8.forge.generator.keycloak;
 
 
 import io.fabric8.forge.generator.Configuration;
+import io.fabric8.forge.generator.EnvironmentVariables;
 import io.fabric8.utils.URLUtils;
 
 public enum KeycloakEndpoint {
@@ -26,15 +27,15 @@ public enum KeycloakEndpoint {
     // http://sso.prod-preview.openshift.io/auth/realms/fabric8/account
     // authorization: Bearer <ACCESS_TOKEN>
     // http://sso.prod-preview.openshift.io/auth/realms/fabric8/account/identity
-    GET_OPENSHIFT_TOKEN("OpenShift", "/auth/realms/fabric8/broker/openshift-v3/token"),
-    GET_GITHUB_TOKEN("GitHub", "/auth/realms/fabric8/broker/github/token");
+    GET_OPENSHIFT_TOKEN("OpenShift", URLUtils.pathJoin(Configuration.keycloakSaaSURL(), "/auth/realms/fabric8/broker/openshift-v3/token")),
+    GET_GITHUB_TOKEN("GitHub", URLUtils.pathJoin(EnvironmentVariables.getAuthApiURL(), "/api/token?for=https://github.com"));
 
     private final String name;
     private final String endpoint;
 
-    KeycloakEndpoint(String name, String path) {
+    KeycloakEndpoint(String name, String url) {
         this.name = name;
-        this.endpoint = URLUtils.pathJoin(Configuration.keycloakSaaSURL(), path);
+        this.endpoint = url;
     }
 
     public String getName() {

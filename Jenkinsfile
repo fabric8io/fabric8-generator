@@ -17,32 +17,34 @@
 @Library('github.com/fabric8io/fabric8-pipeline-library@master')
 def dummy
 def utils = new io.fabric8.Utils()
-mavenNode {
-  ws{
-    checkout scm
-    readTrusted 'release.groovy'
-    if (utils.isCI()) {
-      stage ('Stage'){
-        container('maven'){
-          sh 'mvn clean test'
+clientsTemplate{
+  mavenNode {
+    ws{
+      checkout scm
+      readTrusted 'release.groovy'
+      if (utils.isCI()) {
+        stage ('Stage'){
+          container('maven'){
+            sh 'mvn clean test'
+          }
         }
-      }
 
-    } else if (utils.isCD()) {
-      sh "git remote set-url origin git@github.com:fabric8io/fabric8-generator.git"
-      def pipeline = load 'release.groovy'
+      } else if (utils.isCD()) {
+        sh "git remote set-url origin git@github.com:fabric8io/fabric8-generator.git"
+        def pipeline = load 'release.groovy'
 
-      def stagedProject 
-      stage ('Stage'){
-        stagedProject = pipeline.stage()
-      }
+        def stagedProject 
+        stage ('Stage'){
+          stagedProject = pipeline.stage()
+        }
 
-      stage ('Promote'){
-        pipeline.release(stagedProject)
-      }
+        stage ('Promote'){
+          pipeline.release(stagedProject)
+        }
 
-      stage ('Update downstream dependencies'){
-        pipeline.updateDownstreamDependencies(stagedProject)
+        stage ('Update downstream dependencies'){
+          pipeline.updateDownstreamDependencies(stagedProject)
+        }
       }
     }
   }

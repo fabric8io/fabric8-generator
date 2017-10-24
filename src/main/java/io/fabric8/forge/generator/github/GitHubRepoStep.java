@@ -84,10 +84,10 @@ public class GitHubRepoStep extends AbstractGitHubStep implements UIWizardStep {
         Collection<GitOrganisationDTO> organisations = new ArrayList<>();
         if (github != null && github.isDetailsValid()) {
             String orgKey = github.getDetails().getUserCacheKey();
-            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGitHubOrganisations(builder));
+            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGitHubOrganisations());
         }
         gitOrganisation.setValueChoices(organisations);
-        gitOrganisation.setItemLabelConverter(organisation -> organisation.getName());
+        gitOrganisation.setItemLabelConverter(GitOrganisationDTO::getName);
         String userName = github.getDetails().getUsername();
         if (Strings.isNotBlank(userName)) {
             for (GitOrganisationDTO organisation : organisations) {

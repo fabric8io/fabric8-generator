@@ -24,14 +24,6 @@ import io.fabric8.forge.generator.git.WebHookDetails;
 import io.fabric8.project.support.UserDetails;
 import io.fabric8.utils.Strings;
 import io.fabric8.utils.URLUtils;
-import org.jboss.forge.addon.ui.context.UIBuilder;
-import org.jboss.forge.addon.ui.context.UIValidationContext;
-import org.jboss.forge.addon.ui.input.UIInput;
-import org.kohsuke.github.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.core.MediaType;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -45,8 +37,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import javax.ws.rs.core.MediaType;
+import org.jboss.forge.addon.ui.context.UIValidationContext;
+import org.jboss.forge.addon.ui.input.UIInput;
+import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHCreateRepositoryBuilder;
+import org.kohsuke.github.GHEvent;
+import org.kohsuke.github.GHHook;
+import org.kohsuke.github.GHMyself;
+import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.HttpException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -108,7 +115,7 @@ public class GitHubFacade {
     }
 
 
-    public Collection<GitOrganisationDTO> loadGitHubOrganisations(UIBuilder builder) {
+    public Collection<GitOrganisationDTO> loadGitHubOrganisations() {
         SortedSet<GitOrganisationDTO> organisations = new TreeSet<>();
         String username = details.getUsername();
         if (Strings.isNotBlank(username)) {

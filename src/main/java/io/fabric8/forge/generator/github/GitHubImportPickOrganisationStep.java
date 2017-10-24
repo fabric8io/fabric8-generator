@@ -50,7 +50,7 @@ public class GitHubImportPickOrganisationStep extends AbstractGitHubStep impleme
         Collection<GitOrganisationDTO> organisations = new ArrayList<>();
         if (github != null && github.isDetailsValid()) {
             String orgKey = github.getDetails().getUserCacheKey();
-            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGitHubOrganisations(builder));
+            organisations = organisationsCache.computeIfAbsent(orgKey, k -> github.loadGitHubOrganisations());
         }
         gitOrganisation.setValueChoices(organisations);
         gitOrganisation.setItemLabelConverter(organisation -> organisation.getId());

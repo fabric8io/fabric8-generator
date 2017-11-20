@@ -59,7 +59,7 @@ public class Fabric8ProjectInfoStep extends ProjectInfoStep {
     private static final transient Logger LOG = LoggerFactory.getLogger(NewProjectWizard.class);
 
     @Inject
-    @WithAttributes(label = "Organisation", required = true, description = "The github organisation to create this project inside")
+    @WithAttributes(label = "Organization", required = true, description = "The github organization to create this project inside")
     private UISelectOne<GitOrganisationDTO> gitOrganisation;
 
     @Inject

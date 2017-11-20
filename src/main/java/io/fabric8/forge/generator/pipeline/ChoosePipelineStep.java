@@ -91,7 +91,7 @@ public class ChoosePipelineStep extends AbstractProjectOverviewCommand implement
     @WithAttributes(label = "Pipeline", description = "The Jenkinsfile used to define the Continous Delivery pipeline")
     private UISelectOne<PipelineDTO> pipeline;
     @Inject
-    @WithAttributes(label = "Organisation", required = true, description = "The organisation")
+    @WithAttributes(label = "Organization", required = true, description = "The organization")
     private UISelectOne<String> kubernetesSpace;
     @Inject
     @WithAttributes(label = "Space", description = "The space for the new app")

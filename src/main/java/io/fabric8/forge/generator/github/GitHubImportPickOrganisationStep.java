@@ -36,7 +36,7 @@ import static io.fabric8.forge.generator.AttributeMapKeys.GIT_OWNER_NAME;
 public class GitHubImportPickOrganisationStep extends AbstractGitHubStep implements UIWizardStep {
     final transient Logger LOG = LoggerFactory.getLogger(this.getClass());
     @Inject
-    @WithAttributes(label = "Organisation", required = true, description = "The github organisation to import repositories from")
+    @WithAttributes(label = "Organization", required = true, description = "The github organisation to import repositories from")
     private UISelectOne<GitOrganisationDTO> gitOrganisation;
 
     private GitHubFacade github;
@@ -78,7 +78,7 @@ public class GitHubImportPickOrganisationStep extends AbstractGitHubStep impleme
         String orgName = getOrganisationName(gitOrganisation.getValue());
 
         if (Strings.isNullOrBlank(orgName)) {
-            context.addValidationError(gitOrganisation, "Please select a github organiastion");
+            context.addValidationError(gitOrganisation, "Please select a github organiaztion");
         }
     }
 

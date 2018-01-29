@@ -13,7 +13,7 @@
 
   <properties>
     <fabric8.version>3.0.3</fabric8.version>
-    <fabric8.maven.plugin.version>3.5.28</fabric8.maven.plugin.version>
+    <fabric8.maven.plugin.version>3.5.34</fabric8.maven.plugin.version>
 
     <version.furnace>2.27.0.Final</version.furnace>
     <version.forge>3.8.0.Final</version.forge>

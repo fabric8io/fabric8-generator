@@ -16,6 +16,8 @@
  */
 package io.fabric8.forge.generator.quickstart;
 
+import java.util.Map;
+
 import io.fabric8.forge.generator.Configuration;
 import io.fabric8.forge.generator.git.PickGitAccountForNewProjectStep;
 import io.fabric8.forge.generator.github.GitHubImportRepoStep;
@@ -24,7 +26,7 @@ import io.fabric8.forge.generator.keycloak.ProfileSettingsDTO;
 import io.fabric8.forge.generator.keycloak.TokenHelper;
 import io.fabric8.forge.generator.kubernetes.CreateBuildConfigStep;
 import io.fabric8.forge.generator.pipeline.ChoosePipelineStep;
-import io.openshift.launchpad.ui.booster.DeploymentType;
+import io.openshift.booster.catalog.DeploymentType;
 import org.jboss.forge.addon.ui.context.UIBuilder;
 import org.jboss.forge.addon.ui.context.UIContext;
 import org.jboss.forge.addon.ui.context.UIExecutionContext;
@@ -40,14 +42,12 @@ import org.jboss.forge.addon.ui.wizard.UIWizard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 /**
  * Lets add extra validation to the first page so that users can hit Finish early
  */
 public class NewProjectWizard implements UIWizard {
     private static final transient Logger LOG = LoggerFactory.getLogger(NewProjectWizard.class);
-    
+
     @Override
     public UICommandMetadata getMetadata(UIContext context) {
         return Metadata.forCommand(this.getClass()).name("Fabric8: New Project").description("Generate your project from a booster").category(Categories.create(new String[]{"Openshift.io"}));
